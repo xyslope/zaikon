@@ -1,45 +1,30 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title><%= sessionUser.user_name %>のダッシュボード</title>
+  <title>ダッシュボード</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<% if (sessionUser) { %>
-  <p>ようこそ <%= sessionUser.user_name %> さん | <a href="/logout">ログアウト</a></p>
-<% } %>
+  <h1><%= sessionUser.user_name %> のダッシュボード</h1>
 
+<div class="form-box">
+  <form action="/user/add-location" method="POST">
+    <input type="text" name="location_name" placeholder="新しい場所名" required>
+    <button type="submit">場所を追加</button>
+  </form>
+</div>
 
-  <% if (locations.length === 0) { %>
-    <p>まだ場所がありません。</p>
-  <% } else { %>
-    <ul>
-      <% locations.forEach(loc => { %>
-        <li>
-          <a href="/location/<%= loc.location_id %>"><%= loc.location_name %></a>
-        </li>
-      <% }) %>
-    </ul>
-  <% } %>
-
-<h2>場所の追加</h2>
-<form method="POST" action="/user/<%= userId %>/add-location">
-  <input type="text" name="location_name" placeholder="場所の名前" required>
-  <button type="submit">追加</button>
-</form>
-
-<form action="/add-member" method="POST">
-  <select name="location_id">
+  <h2>あなたの場所一覧</h2>
+  <ul>
     <% locations.forEach(loc => { %>
-      <option value="<%= loc.location_id %>"><%= loc.location_name %></option>
+      <li>
+        <a href="/location/<%= loc.location_id %>"><%= loc.location_name %></a>
+      </li>
     <% }) %>
-  </select>
-  <input type="text" name="user_name" placeholder="ユーザー名" required>
-  <button type="submit">追加</button>
-</form>
+  </ul>
 
-
-  <p><a href="/">← トップページに戻る</a></p>
+  <p><a href="/me">ユーザー情報の編集</a>｜<a href="/logout">ログアウト</a></p>
 </body>
 </html>

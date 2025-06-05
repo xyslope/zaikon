@@ -56,11 +56,9 @@
 .status-label.Yellow { background-color: #f1c40f; color: black; }
 .status-label.Green  { background-color: #2ecc71; }
 .status-label.Purple { background-color: #9b59b6; }
-    body {
-      font-family: sans-serif;
-      padding: 2em;
-      background-color: #f9f9f9;
-    }
+
+
+
     h1 {
       font-size: 1.5em;
     }
@@ -78,3 +76,55 @@
       text-decoration: none;
       color: #007acc;
     }
+    .danger-button {
+	background-color: #d9534f;
+	color: white;
+	padding: 0.4em 1em;
+	border: none;
+	border-radius: 5px;
+	margin-top: 1em;
+	cursor: pointer;
+    }
+    .danger-button:hover {
+	background-color: #c9302c;
+    }
+
+
+.form-box {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1.5em;
+  max-width: 400px;
+  margin: 2em 0; /* 左寄せのため margin の auto を外す */
+  background-color: #f9f9f9;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+
+.form-box input[type="text"],
+.form-box input[type="number"] {
+  padding: 0.6em;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.form-box button {
+  padding: 0.6em;
+  font-size: 1em;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: flex-start; /* ボタンも左寄せ */
+}
+
+.form-box button:hover {
+  background-color: #45a049;
+}

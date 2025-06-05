@@ -1,4 +1,3 @@
-
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -13,7 +12,10 @@ app.use(session({
   secret: 'hogehogemonger',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: {  maxAge: 7 * 24 * 60 * 60 * 1000, // クッキーの有効期限（例：1週間）
+    secure: false,                   // HTTPSのみでクッキー送信（開発環境では false）
+    httpOnly: true                   // JSからアクセス不可（推奨）
+  }
 }));
 
 app.use(express.urlencoded({ extended: true }));
@@ -107,6 +109,7 @@ app.get('/user', (req, res) => {
 
 // 場所追加
 app.post('/user/add-location', (req, res) => {
+  console.log('[POST/add] セッションユーザー:', req.session.user); 
   const user = req.session.user;
   if (!user) return res.redirect('/login');
   const { location_name } = req.body;
@@ -125,19 +128,35 @@ app.post('/user/add-location', (req, res) => {
 // 特定ロケーション
 app.get('/location/:locationId', (req, res) => {
   const locationId = req.params.locationId;
+  const sessionUser = req.session.user;
   const locations = loadJSON('./data/locations.json');
-  const location = locations.find(i => i.location_id == locationId);
+  const location = locations.find(i => i.location_id === locationId);
   const items = loadJSON('./data/items.json');
   const locItems = items.filter(i => i.location_id === locationId);
+
   const members = loadJSON('./data/members.json');
-  const ownerEntry = members.find(m => m.location_id === locationId);
-  const itemOwner = ownerEntry ? ownerEntry.user_id : 'guest';
-  res.render('location', {
-    locationId,
-    locationName: location ? location.location_name : '(不明)',
-    items: locItems,
-    itemOwner
-  });
+  const users = loadJSON('./data/users.json');
+  const locationOwnerId = location ? location.created_by : null;
+  const locationMembers = members
+    .filter(m => m.location_id === locationId)
+    .map(m => {
+      const user = users.find(u => u.user_id === m.user_id);
+      return {
+        user_id: m.user_id,
+        user_name: user ? user.user_name : '不明',
+        joined_at: m.joined_at
+      };
+    });
+
+
+    res.render('location', {
+	locationId,
+	locationName: location ? location.location_name : '(不明)',
+	items: locItems,
+	sessionUser,
+	members: locationMembers,
+	locationOwnerId
+    });
 });
 
 // アイテム追加
@@ -176,6 +195,69 @@ app.post('/location/:locationId/update', (req, res) => {
   res.redirect(`/location/${locationId}`);
 });
 
+app.post('/location/:locationId/delete', (req, res) => {
+  const { locationId } = req.params;
+  const sessionUser = req.session.user;
+  if (!sessionUser) return res.redirect('/login');
+
+  const locations = loadJSON('./data/locations.json');
+  const location = locations.find(l => l.location_id === locationId);
+
+  // 作成者でない場合は拒否
+  if (!location || location.created_by !== sessionUser.user_id) {
+    return res.status(403).send('権限がありません。');
+  }
+
+  // 関連データ削除
+  saveJSON('./data/locations.json', locations.filter(l => l.location_id !== locationId));
+  saveJSON('./data/items.json', loadJSON('./data/items.json').filter(i => i.location_id !== locationId));
+  saveJSON('./data/members.json', loadJSON('./data/members.json').filter(m => m.location_id !== locationId));
+
+  res.redirect('/user');
+});
+
+
+app.post('/location/:locationId/delete-item', (req, res) => {
+  const { locationId } = req.params;
+  const { item_id } = req.body;
+
+  if (!item_id) return res.redirect(`/location/${locationId}`);
+
+  const items = loadJSON('./data/items.json');
+  const filtered = items.filter(i => i.item_id !== item_id);
+  saveJSON('./data/items.json', filtered);
+
+  res.redirect(`/location/${locationId}`);
+});
+
+app.post('/location/:locationId/remove-member', (req, res) => {
+  const { locationId } = req.params;
+  const { user_id } = req.body;
+  const sessionUser = req.session.user;
+
+  if (!sessionUser) return res.redirect('/login');
+
+  let members = loadJSON('./data/members.json');
+
+  // メンバーを削除
+  members = members.filter(m => !(m.location_id === locationId && m.user_id === user_id));
+  saveJSON('./data/members.json', members);
+
+  // 残りメンバーがいなければ location/items も削除
+  const remaining = members.filter(m => m.location_id === locationId);
+  if (remaining.length === 0) {
+    const locations = loadJSON('./data/locations.json').filter(l => l.location_id !== locationId);
+    saveJSON('./data/locations.json', locations);
+
+    const items = loadJSON('./data/items.json').filter(i => i.location_id !== locationId);
+    saveJSON('./data/items.json', items);
+
+    return res.redirect('/user');
+  }
+
+  res.redirect(`/location/${locationId}`);
+});
+
 // メンバー追加
 app.post('/add-member', (req, res) => {
   const { location_id, user_name } = req.body;
@@ -184,7 +266,7 @@ app.post('/add-member', (req, res) => {
   const members = loadJSON('./data/members.json');
   let user = users.find(u => u.user_name === user_name);
   if (!user) {
-    return res.send(\`<p>ユーザ「\${user_name}」は存在しません。<a href="/user/add?name=\${user_name}&location=\${location_id}">作成しますか？</a></p>\`);
+    return res.send(`<p>ユーザ「\${user_name}」は存在しません。<a href="/user/add?name=\${user_name}&location=\${location_id}">作成しますか？</a></p>`);
   }
   const already = members.some(m => m.user_id === user.user_id && m.location_id === location_id);
   if (!already) {

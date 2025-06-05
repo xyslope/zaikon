@@ -1,22 +1,20 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>在庫管理アプリ</title>
+  <title>在庫管理システム</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>在庫管理へようこそ</h1>
-
-  <div class="form-block">
-    <h3>ユーザー名を入力してください</h3>
-    <form action="/go-to-dashboard" method="POST">
-      <input type="text" name="user_name" placeholder="ユーザー名" required />
-      <button type="submit">ダッシュボードへ</button>
-    </form>
-  </div>
-  <a href="/new-user">ユーザを追加して開始</a>
-
-<p><a href="/register">ユーザー登録はこちら</a></p>
-
+  <h1>在庫管理システム</h1>
+  <h2>ログイン：</h2>
+      <form method="POST" action="/login">
+	<label>ユーザー名: <input type="text" name="user_name" required></label><br>
+	<label>メールアドレス: <input type="email" name="email" required></label><br>
+	<button type="submit">ログイン</button>
+      </form>
+  </form>
+  <p><a href="/register">ユーザー登録はこちら</a></p>
 </body>
 </html>
