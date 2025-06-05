@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>場所: <%= locationName %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>場所: <%= locationName %></h1>
+
+  <% if (items.length === 0) { %>
+    <p>この場所にはまだアイテムがありません。</p>
+  <% } %>
+
+  <div class="form-block">
+    <h3>アイテム追加</h3>
+    <form action="/location/<%= locationId %>/add" method="POST">
+      <input type="text" name="item_name" placeholder="アイテム名" required />
+      <input type="number" name="amount" placeholder="在庫数" required />
+      <label>Yellow閾値 <input type="number" name="yellow" min="0" value="1" required></label>
+      <label>Green閾値 <input type="number" name="green" min="0" value="3" required></label>
+      <label>Purple閾値 <input type="number" name="purple" min="0" value="6" required></label>
+      <button type="submit">追加</button>
+    </form>
+  </div>
+
+<div class="tile-container">
+  <% items.forEach(item => { %>
+    <div class="tile">
+      <div class="status-label <%= item.status %>"><strong><%= item.item_name %></strong></div>
+      <form method="POST" action="/location/<%= locationId %>/update">
+        <input type="hidden" name="item_id" value="<%= item.item_id %>">
+        <label>在庫数 <input type="number" name="new_amount" value="<%= item.amount %>" min="0" required></label>
+        <button type="submit">変更</button>
+      </form>
+    </div>
+  <% }) %>
+</div>
+
+<form action="/add-member" method="POST">
+  <input type="hidden" name="location_id" value="<%= locationId %>">
+  <input type="text" name="user_name" placeholder="ユーザー名" required>
+  <button type="submit">追加</button>
+</form>
+
+
+  <% if (itemOwner) { %>
+    <p><a href="/user/<%= itemOwner %>">← ユーザページに戻る</a></p>
+  <% } else { %>
+    <p><a href="/">← トップページに戻る</a></p>
+  <% } %>
+</body>
+</html>

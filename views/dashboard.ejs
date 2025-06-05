@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title><%= sessionUser.user_name %>のダッシュボード</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<% if (sessionUser) { %>
+  <p>ようこそ <%= sessionUser.user_name %> さん | <a href="/logout">ログアウト</a></p>
+<% } %>
+
+
+  <% if (locations.length === 0) { %>
+    <p>まだ場所がありません。</p>
+  <% } else { %>
+    <ul>
+      <% locations.forEach(loc => { %>
+        <li>
+          <a href="/location/<%= loc.location_id %>"><%= loc.location_name %></a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+
+<h2>場所の追加</h2>
+<form method="POST" action="/user/<%= userId %>/add-location">
+  <input type="text" name="location_name" placeholder="場所の名前" required>
+  <button type="submit">追加</button>
+</form>
+
+<form action="/add-member" method="POST">
+  <select name="location_id">
+    <% locations.forEach(loc => { %>
+      <option value="<%= loc.location_id %>"><%= loc.location_name %></option>
+    <% }) %>
+  </select>
+  <input type="text" name="user_name" placeholder="ユーザー名" required>
+  <button type="submit">追加</button>
+</form>
+
+
+  <p><a href="/">← トップページに戻る</a></p>
+</body>
+</html>

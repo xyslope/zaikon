@@ -1,0 +1,108 @@
+[
+  {
+    "item_id": "itm_abc12345",
+    "item_name": "乾電池",
+    "location_id": "loc_ehtqpxn0",
+    "yellow": 2,
+    "green": 5,
+    "purple": 10,
+    "amount": 5,
+    "created_at": "2024-06-01T12:30:00Z",
+    "updated_on": "2025-06-05T01:00:31.215Z",
+    "status": "Green"
+  },
+  {
+    "item_id": "itm_xyz67890",
+    "item_name": "ガムテープ",
+    "location_id": "loc_x7a3b9m1",
+    "yellow": 1,
+    "green": 3,
+    "purple": 6,
+    "amount": 2,
+    "created_at": "2024-06-02T09:00:00Z",
+    "updated_on": "2024-06-02T09:00:00Z"
+  },
+  {
+    "item_id": "itm_x3l73rs9",
+    "item_name": "台所洗剤",
+    "amount": 4,
+    "location_id": "loc_ehtqpxn0",
+    "created_at": "2025-06-05T00:29:02.349Z",
+    "updated_on": "2025-06-05T01:05:10.513Z",
+    "status": "Red"
+  },
+  {
+    "item_id": "itm_eq4dp2aq",
+    "item_name": "にんじん",
+    "location_id": "loc_ehtqpxn0",
+    "yellow": 1,
+    "green": 3,
+    "purple": 6,
+    "amount": 3,
+    "created_at": "2025-06-05T00:38:49.567Z",
+    "updated_at": "2025-06-05T00:38:49.570Z",
+    "updated_on": "2025-06-05T01:05:15.446Z",
+    "status": "Green"
+  },
+  {
+    "item_id": "itm_97984a98",
+    "item_name": "ごみ袋",
+    "location_id": "loc_ehtqpxn0",
+    "yellow": 2,
+    "green": 10,
+    "purple": 30,
+    "amount": 3,
+    "status": "Green",
+    "created_at": "2025-06-05T01:03:58.216Z",
+    "updated_at": "2025-06-05T01:03:58.216Z"
+  },
+  {
+    "item_id": "itm_w0o7g86r",
+    "item_name": "お米",
+    "location_id": "loc_x7a3b9m1",
+    "yellow": 3,
+    "green": 5,
+    "purple": 10,
+    "amount": 2,
+    "status": "Purple",
+    "created_at": "2025-06-05T04:09:37.917Z",
+    "updated_at": "2025-06-05T04:09:37.917Z"
+  },
+  {
+    "item_id": "itm_rxn6p0un",
+    "item_name": "ふとん",
+    "location_id": "loc_apvjfqza",
+    "yellow": 1,
+    "green": 2,
+    "purple": 4,
+    "amount": 1,
+    "status": "Yellow",
+    "created_at": "2025-06-05T04:57:32.152Z",
+    "updated_at": "2025-06-05T04:57:32.152Z"
+  },
+  {
+    "item_id": "itm_uag7dqfv",
+    "item_name": "乾電池",
+    "location_id": "loc_fk62p48q",
+    "yellow": 5,
+    "green": 10,
+    "purple": 20,
+    "amount": 1,
+    "status": "Red",
+    "created_at": "2025-06-05T07:36:29.440Z",
+    "updated_at": "2025-06-05T07:36:29.440Z",
+    "updated_on": "2025-06-05T07:38:07.348Z"
+  },
+  {
+    "item_id": "itm_3g4hlzl8",
+    "item_name": "ふとん",
+    "location_id": "loc_fk62p48q",
+    "yellow": 1,
+    "green": 2,
+    "purple": 3,
+    "amount": 1,
+    "status": "Yellow",
+    "created_at": "2025-06-05T07:36:48.224Z",
+    "updated_at": "2025-06-05T07:36:48.225Z"
+  }
+]

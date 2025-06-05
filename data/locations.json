@@ -1,0 +1,46 @@
+[
+  {
+    "location_id": "loc_ehtqpxn0",
+    "location_name": "リビング棚",
+    "owner_id": "guest",
+    "created_at": "2024-06-01T12:00:00Z",
+    "updated_at": "2024-06-01T12:00:00Z"
+  },
+  {
+    "location_id": "loc_x7a3b9m1",
+    "location_name": "キッチン引き出し",
+    "owner_id": "guest",
+    "created_at": "2024-06-02T08:30:00Z",
+    "updated_at": "2024-06-02T08:30:00Z"
+  },
+  {
+    "location_id": "loc_apvjfqza",
+    "location_name": "ベッドの上",
+    "created_by": "usr_12ztgt",
+    "created_at": "2025-06-05T04:34:08.485Z"
+  },
+  {
+    "location_id": "loc_fk62p48q",
+    "location_name": "福岡の部屋",
+    "created_by": "usr_12ztgt",
+    "created_at": "2025-06-05T07:35:05.720Z"
+  },
+  {
+    "location_id": "loc_gvmfvsgi",
+    "location_name": "研究室",
+    "created_by": "usr_12ztgt",
+    "created_at": "2025-06-05T07:35:11.223Z"
+  },
+  {
+    "location_id": "loc_igtosxwi",
+    "location_name": "熊本の家",
+    "created_by": "usr_12ztgt",
+    "created_at": "2025-06-05T07:35:39.879Z"
+  },
+  {
+    "location_id": "loc_4n26krfy",
+    "location_name": "車",
+    "created_by": "usr_12ztgt",
+    "created_at": "2025-06-05T07:35:44.264Z"
+  }
+]
