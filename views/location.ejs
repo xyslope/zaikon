@@ -3,67 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <title><%= locationName %></title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <h1>場所: <%= locationName %></h1>
+  <div class="location-actions">
+    <a href="#" class="edit-link"><i class="fas fa-pen"></i></a>
+    <% if (sessionUser && locationOwnerId === sessionUser.user_id) { %>
+    <form action="/location/<%= locationId %>/delete" method="POST" onsubmit="return confirm('本当にこの場所を削除しますか？');">
+      <button type="submit" class="icon-button" title="場所を削除">
+        <i class="fas fa-trash"></i>
+      </button>
+    </form>
+    <% } %>
+  </div>
+
 <h3>ユーザ：<%= sessionUser.user_name %></h3>
 <h3>この場所のメンバー</h3>
-<ul>
+  <div class="location-actions">
   <% members.forEach(m => { %>
-    <li>
       <%= m.user_name %>
       <% if (sessionUser && sessionUser.user_id !== m.user_id) { %>
         <!-- 自分以外を削除可能 -->
         <form action="/location/<%= locationId %>/remove-member" method="POST" style="display:inline">
           <input type="hidden" name="user_id" value="<%= m.user_id %>">
-          <button type="submit" onclick="return confirm('このメンバーを削除しますか？')">削除</button>
+          <button type="submit" onclick="return confirm('このメンバーを削除しますか？')"><i class="fas fa-scissors"></i></button>
         </form>
       <% } %>
-    </li>
+      ｜
   <% }) %>
-</ul>
-
-<% if (sessionUser && locationOwnerId === sessionUser.user_id) { %>
-  <form action="/location/<%= locationId %>/delete" method="POST" onsubmit="return confirm('本当にこの場所を削除しますか？');">
-    <button type="submit" class="danger-button">この場所を削除</button>
-  </form>
-<% } %>
-
-  <h3>アイテム追加</h3>
-  <form action="/location/<%= locationId %>/add" method="POST">
-    <input type="text" name="item_name" placeholder="アイテム名" required>
-    <input type="number" name="amount" placeholder="在庫数" required>
-    <input type="number" name="yellow" placeholder="Yellow閾値" value="1" required>
-    <input type="number" name="green" placeholder="Green閾値" value="3" required>
-    <input type="number" name="purple" placeholder="Purple閾値" value="6" required>
-    <button type="submit">追加</button>
-  </form>
-
-  <div class="tile-container">
-    <% items.forEach(item => { %>
-      <div class="tile">
-        <strong><%= item.item_name %></strong>
-        <form method="POST" action="/location/<%= locationId %>/update">
-          <input type="hidden" name="item_id" value="<%= item.item_id %>">
-          <label>在庫数: <input type="number" name="new_amount" value="<%= item.amount %>" min="0" required></label>
-          <button type="submit">変更</button>
-        </form>
-	<form method="POST" action="/location/<%= locationId %>/delete-item">
-	  <input type="hidden" name="item_id" value="<%= item.item_id %>">
-	  <button type="submit" onclick="return confirm('本当に削除しますか？');">削除</button>
-	</form>
-      </div>
-    <% }) %>
-  </div>
-
-  <h3>メンバー追加</h3>
   <form action="/add-member" method="POST">
     <input type="hidden" name="location_id" value="<%= locationId %>">
     <input type="text" name="user_name" placeholder="ユーザー名" required>
-    <button type="submit">追加</button>
+    <button type="submit"><i class="fas fa-plus"></i></button>
   </form>
+  </div>
 
-  <p><a href="/user">← ダッシュボードへ戻る</a></p>
+
+
+  <div class="tile-container">
+    <% items.forEach(item => { %>
+    <div class="tile">
+      <div class="location-actions">
+        <strong><%= item.item_name %></strong>
+	<form method="POST" action="/location/<%= locationId %>/delete-item">
+	  <input type="hidden" name="item_id" value="<%= item.item_id %>">
+	  <button type="submit" onclick="return confirm('本当に削除しますか？');"><i class="fas fa-trash"></i></button>
+	</form>
+      </div>
+      <form method="POST" action="/location/<%= locationId %>/update">
+        <input type="hidden" name="item_id" value="<%= item.item_id %>">
+        <label>在庫数: <input type="number" name="new_amount" value="<%= item.amount %>" min="0" required></label>
+        <button type="submit"><i class="fas fa-pen"></i></button>
+      </form>
+    </div>
+    <% }) %>
+
+    <div class="tile">
+      <h3>アイテム追加</h3>
+      <form action="/location/<%= locationId %>/add" method="POST">
+	<input type="text" name="item_name" placeholder="アイテム名" required>
+	<input type="number" name="amount" placeholder="在庫数" required>
+	<div class="label-icon-input">
+	  <i class="fa-solid fa-circle-exclamation yellow"></i>
+	  <input type="number" name="yellow" placeholder="Yellow閾値" value="1" required>
+	</div>
+	<div class="label-icon-input">
+	  <i class="fa-solid fa-thumbs-up green"></i>
+	  <input type="number" name="green" placeholder="Green閾値" value="3" required>
+	</div>
+	<div class="label-icon-input">
+	  <i class="fa-solid fa-face-grin-tongue-wink purple"></i>
+	  <input type="number" name="purple" placeholder="Purple閾値" value="6" required>
+	</div>
+      </form>
+    </div>
+    
+  </div>
+
+  <p><a href="/user/<%= sessionUser.user_id %>">← ダッシュボードへ戻る</a></p>
 </body>
 </html>

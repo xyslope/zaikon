@@ -38,5 +38,25 @@
     "user_id": "usr_12ztgt",
     "location_id": "loc_4n26krfy",
     "joined_at": "2025-06-05T07:35:44.264Z"
+  },
+  {
+    "user_id": "usr_12ztgt",
+    "location_id": "loc_5180e4ac",
+    "joined_at": "2025-06-05T23:58:28.680Z"
+  },
+  {
+    "user_id": "usr_12ztgt",
+    "location_id": "loc_eb49dff4",
+    "joined_at": "2025-06-06T00:01:32.152Z"
+  },
+  {
+    "user_id": "usr_b28b9543",
+    "location_id": "loc_eb49dff4",
+    "joined_at": "2025-06-06T00:06:13.552Z"
+  },
+  {
+    "user_id": "usr_lrwzpd",
+    "location_id": "loc_eb49dff4",
+    "joined_at": "2025-06-06T00:06:19.932Z"
   }
 ]

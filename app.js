@@ -44,6 +44,24 @@ function calculateStatus(amount, yellow, green, purple) {
   return 'Red';
 }
 
+// 認証チェック（許可リスト以外は / にリダイレクト）
+app.use((req, res, next) => {
+  const allowedPaths = [
+    /^\/$/,                  // /
+    /^\/login/,              // /login or /login POST
+    /^\/user\/[\w-]+$/,      // /user/xxxxx
+    /^\/register/            // オプション：登録ページ
+  ];
+
+  const isAllowed = allowedPaths.some(pattern => pattern.test(req.path));
+
+  if (!req.session.user && !isAllowed) {
+    return res.redirect('/');
+  }
+
+  next();
+});
+
 // ランディング
 app.get('/', (req, res) => {
   res.render('landing');
@@ -60,7 +78,7 @@ app.post('/login', (req, res) => {
   const found = users.find(u => u.user_name === user_name && u.email === email);
   if (found) {
     req.session.user = found;
-    res.redirect('/user');
+    res.redirect(`/user/${req.session.user.user_id}`);
   } else {
     res.send('<p>ユーザーが見つかりません。<a href="/login">戻る</a></p>');
   }
@@ -93,18 +111,36 @@ app.post('/register', (req, res) => {
   users.push(newUser);
   saveJSON('./data/users.json', users);
   req.session.user = newUser;
-  res.redirect('/user');
+  res.redirect(`/user/${user.user_id}`);
 });
 
 // ダッシュボード
-app.get('/user', (req, res) => {
-  const user = req.session.user;
-  if (!user) return res.redirect('/login');
+app.get('/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  const users = loadJSON('./data/users.json');
+
+  // セッションに未ログインなら、自動でログイン
+  if (!req.session.user || req.session.user.user_id !== userId) {
+    const user = users.find(u => u.user_id === userId);
+    if (!user) {
+      return res.send(`<p>ユーザーが見つかりません。<a href="/">トップへ</a></p>`);
+    }
+    req.session.user = user; // 自動ログイン
+  }
+
   const members = loadJSON('./data/members.json');
   const locations = loadJSON('./data/locations.json');
-  const myLocations = members.filter(m => m.user_id === user.user_id).map(m => m.location_id);
+
+  const myLocations = members
+    .filter(m => m.user_id === userId)
+    .map(m => m.location_id);
+
   const locationList = locations.filter(loc => myLocations.includes(loc.location_id));
-  res.render('dashboard', { sessionUser: user, locations: locationList });
+  res.render('dashboard', {
+    userId,
+    locations: locationList,
+    sessionUser: req.session.user
+  });
 });
 
 // 場所追加
@@ -122,7 +158,7 @@ app.post('/user/add-location', (req, res) => {
   members.push({ user_id: user.user_id, location_id: newId, joined_at: now });
   saveJSON('./data/locations.json', locations);
   saveJSON('./data/members.json', members);
-  res.redirect('/user');
+  res.redirect(`/user/${user.user_id}`);
 });
 
 // 特定ロケーション
@@ -213,7 +249,7 @@ app.post('/location/:locationId/delete', (req, res) => {
   saveJSON('./data/items.json', loadJSON('./data/items.json').filter(i => i.location_id !== locationId));
   saveJSON('./data/members.json', loadJSON('./data/members.json').filter(m => m.location_id !== locationId));
 
-  res.redirect('/user');
+  res.redirect(`/user/${user.user_id}`);
 });
 
 
@@ -252,7 +288,7 @@ app.post('/location/:locationId/remove-member', (req, res) => {
     const items = loadJSON('./data/items.json').filter(i => i.location_id !== locationId);
     saveJSON('./data/items.json', items);
 
-    return res.redirect('/user');
+    res.redirect(`/user/${user.user_id}`);
   }
 
   res.redirect(`/location/${locationId}`);
@@ -266,7 +302,7 @@ app.post('/add-member', (req, res) => {
   const members = loadJSON('./data/members.json');
   let user = users.find(u => u.user_name === user_name);
   if (!user) {
-    return res.send(`<p>ユーザ「\${user_name}」は存在しません。<a href="/user/add?name=\${user_name}&location=\${location_id}">作成しますか？</a></p>`);
+    return res.send(`<p>ユーザ「${user_name}」は存在しません。<a href="/user/add?name=${user_name}&location=${location_id}">作成しますか？</a></p>`);
   }
   const already = members.some(m => m.user_id === user.user_id && m.location_id === location_id);
   if (!already) {

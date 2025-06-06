@@ -30,5 +30,17 @@
     "location_name": "車",
     "created_by": "usr_12ztgt",
     "created_at": "2025-06-05T07:35:44.264Z"
+  },
+  {
+    "location_id": "loc_5180e4ac",
+    "location_name": "ゼミ室",
+    "created_by": "usr_12ztgt",
+    "created_at": "2025-06-05T23:58:28.680Z"
+  },
+  {
+    "location_id": "loc_eb49dff4",
+    "location_name": "福岡の部屋",
+    "created_by": "usr_12ztgt",
+    "created_at": "2025-06-06T00:01:32.152Z"
   }
 ]
