@@ -1,20 +1,33 @@
+// c:\Users\yusakata\work\github.com\xyslope\zaikon\app.js
+// Try to save from windows.
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const session = require('express-session');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+// db.js の接続確認
+// db.js
+const db = require('better-sqlite3')('zaikon.db', {
+  verbose: console.log, // SQLログ表示
+  timeout: 5000 // タイムアウト設定
+});
+const ItemRepository = require('./repositories/ItemRepository');
+const LocationRepository = require('./repositories/LocationRepository');
+const UserRepository = require('./repositories/UserRepository');
+const MemberRepository = require('./repositories/MemberRepository');
 
 const app = express();
 const PORT = 3000;
 
-// セッション設定
+
+// セッション設定（元の設定を保持）
 app.use(session({
   secret: 'hogehogemonger',
   resave: false,
   saveUninitialized: false,
-  cookie: {  maxAge: 7 * 24 * 60 * 60 * 1000, // クッキーの有効期限（例：1週間）
-    secure: false,                   // HTTPSのみでクッキー送信（開発環境では false）
-    httpOnly: true                   // JSからアクセス不可（推奨）
+  cookie: { 
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: false,
+    httpOnly: true
   }
 }));
 
@@ -24,15 +37,7 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// JSON読み書き関数
-function loadJSON(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-}
-
-function saveJSON(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-}
-
+// ステータス計算関数（元の実装を保持）
 function calculateStatus(amount, yellow, green, purple) {
   amount = Number(amount);
   yellow = Number(yellow);
@@ -44,13 +49,13 @@ function calculateStatus(amount, yellow, green, purple) {
   return 'Red';
 }
 
-// 認証チェック（許可リスト以外は / にリダイレクト）
+// 認証チェックミドルウェア（元のロジックを保持）
 app.use((req, res, next) => {
   const allowedPaths = [
-    /^\/$/,                  // /
-    /^\/login/,              // /login or /login POST
-    /^\/user\/[\w-]+$/,      // /user/xxxxx
-    /^\/register/            // オプション：登録ページ
+    /^\/$/,
+    /^\/login/,
+    /^\/user\/[\w-]+$/,
+    /^\/register/
   ];
 
   const isAllowed = allowedPaths.some(pattern => pattern.test(req.path));
@@ -58,264 +63,347 @@ app.use((req, res, next) => {
   if (!req.session.user && !isAllowed) {
     return res.redirect('/');
   }
-
   next();
 });
 
-// ランディング
+// ランディングページ（変更なし）
 app.get('/', (req, res) => {
   res.render('landing');
 });
 
-// ログイン
-app.get('/login', (req, res) => {
-  res.render('login');
-});
-
+// ログイン処理（SQLite対応版）
 app.post('/login', (req, res) => {
   const { user_name, email } = req.body;
-  const users = loadJSON('./data/users.json');
-  const found = users.find(u => u.user_name === user_name && u.email === email);
-  if (found) {
-    req.session.user = found;
-    res.redirect(`/user/${req.session.user.user_id}`);
-  } else {
+  try {
+    const user = UserRepository.findByCredentials(user_name, email);
+    if (user) {
+      req.session.user = user;
+      return res.redirect(`/user/${user.user_id}`);
+    }
     res.send('<p>ユーザーが見つかりません。<a href="/login">戻る</a></p>');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('ログイン処理中にエラーが発生しました');
   }
 });
 
-// ログアウト
+// ログアウト（変更なし）
 app.get('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
 });
 
-// ユーザー登録
+// ユーザー登録（SQLite対応版）
 app.get('/register', (req, res) => {
   res.render('register');
 });
 
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
   const { user_name, email } = req.body;
   if (!user_name || !email) return res.redirect('/register');
-  const users = loadJSON('./data/users.json');
-  const existing = users.find(u => u.user_name === user_name || u.email === email);
-  if (existing) {
-    return res.send('<p>同じユーザー名またはメールアドレスが既に存在します。<a href="/register">戻る</a></p>');
-  }
-  const newUser = {
-    user_id: 'usr_' + uuidv4().slice(0, 8),
-    user_name,
-    email,
-    created_at: new Date().toISOString()
-  };
-  users.push(newUser);
-  saveJSON('./data/users.json', users);
-  req.session.user = newUser;
-  res.redirect(`/user/${user.user_id}`);
-});
 
-// ダッシュボード
-app.get('/user/:userId', (req, res) => {
-  const { userId } = req.params;
-  const users = loadJSON('./data/users.json');
-
-  // セッションに未ログインなら、自動でログイン
-  if (!req.session.user || req.session.user.user_id !== userId) {
-    const user = users.find(u => u.user_id === userId);
-    if (!user) {
-      return res.send(`<p>ユーザーが見つかりません。<a href="/">トップへ</a></p>`);
+  try {
+    const existing = await UserRepository.findByUsernameOrEmail(user_name, email);
+    if (existing) {
+      return res.send('<p>同じユーザー名またはメールアドレスが既に存在します。<a href="/register">戻る</a></p>');
     }
-    req.session.user = user; // 自動ログイン
+
+    const newUser = {
+      user_id: 'usr_' + uuidv4().slice(0, 8),
+      user_name,
+      email,
+      created_at: new Date().toISOString()
+    };
+
+    await UserRepository.createUser(newUser);
+    req.session.user = newUser;
+    res.redirect(`/user/${newUser.user_id}`);
+  } catch (err) {
+    res.status(500).send('ユーザー登録中にエラーが発生しました');
   }
-
-  const members = loadJSON('./data/members.json');
-  const locations = loadJSON('./data/locations.json');
-
-  const myLocations = members
-    .filter(m => m.user_id === userId)
-    .map(m => m.location_id);
-
-  const locationList = locations.filter(loc => myLocations.includes(loc.location_id));
-  res.render('dashboard', {
-    userId,
-    locations: locationList,
-    sessionUser: req.session.user
-  });
 });
 
-// 場所追加
-app.post('/user/add-location', (req, res) => {
-  console.log('[POST/add] セッションユーザー:', req.session.user); 
+// ダッシュボード（SQLite対応版）
+app.get('/user/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // 自動ログイン処理
+    if (!req.session.user || req.session.user.user_id !== userId) {
+      const user = await UserRepository.findById(userId);
+      if (!user) {
+        return res.send(`<p>ユーザーが見つかりません。<a href="/">トップへ</a></p>`);
+      }
+      req.session.user = user;
+    }
+
+    const locations = await LocationRepository.findByUserId(userId);
+    res.render('dashboard', {
+      userId,
+      locations,
+      sessionUser: req.session.user
+    });
+  } catch (err) {
+    res.status(500).send('データ取得中にエラーが発生しました');
+  }
+});
+
+// 場所追加（SQLite対応版）
+app.post('/user/add-location', async (req, res) => {
   const user = req.session.user;
   if (!user) return res.redirect('/login');
+
   const { location_name } = req.body;
-  if (!location_name) return res.redirect('/user');
-  const locations = loadJSON('./data/locations.json');
-  const members = loadJSON('./data/members.json');
-  const newId = 'loc_' + uuidv4().slice(0, 8);
-  const now = new Date().toISOString();
-  locations.push({ location_id: newId, location_name, created_by: user.user_id, created_at: now });
-  members.push({ user_id: user.user_id, location_id: newId, joined_at: now });
-  saveJSON('./data/locations.json', locations);
-  saveJSON('./data/members.json', members);
-  res.redirect(`/user/${user.user_id}`);
-});
+  if (!location_name) return res.redirect(`/user/${user.user_id}`);
 
-// 特定ロケーション
-app.get('/location/:locationId', (req, res) => {
-  const locationId = req.params.locationId;
-  const sessionUser = req.session.user;
-  const locations = loadJSON('./data/locations.json');
-  const location = locations.find(i => i.location_id === locationId);
-  const items = loadJSON('./data/items.json');
-  const locItems = items.filter(i => i.location_id === locationId);
+  try {
+    const locationId = 'loc_' + uuidv4().slice(0, 8);
+    const now = new Date().toISOString();
 
-  const members = loadJSON('./data/members.json');
-  const users = loadJSON('./data/users.json');
-  const locationOwnerId = location ? location.created_by : null;
-  const locationMembers = members
-    .filter(m => m.location_id === locationId)
-    .map(m => {
-      const user = users.find(u => u.user_id === m.user_id);
-      return {
-        user_id: m.user_id,
-        user_name: user ? user.user_name : '不明',
-        joined_at: m.joined_at
-      };
+    await LocationRepository.create({
+      location_id: locationId,
+      location_name,
+      created_by: user.user_id,
+      created_at: now
     });
 
-
-    res.render('location', {
-	locationId,
-	locationName: location ? location.location_name : '(不明)',
-	items: locItems,
-	sessionUser,
-	members: locationMembers,
-	locationOwnerId
+    await MemberRepository.addMember({
+      user_id: user.user_id,
+      location_id: locationId,
+      joined_at: now
     });
-});
 
-// アイテム追加
-app.post('/location/:locationId/add', (req, res) => {
-  const locationId = req.params.locationId;
-  const items = loadJSON('./data/items.json');
-  const newItem = {
-    item_id: 'itm_' + uuidv4().slice(0, 8),
-    item_name: req.body.item_name,
-    location_id: locationId,
-    yellow: parseInt(req.body.yellow || '1', 10),
-    green: parseInt(req.body.green || '3', 10),
-    purple: parseInt(req.body.purple || '6', 10),
-    amount: parseInt(req.body.amount || '0', 10),
-    status: calculateStatus(req.body.amount, req.body.yellow, req.body.green, req.body.purple),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-  items.push(newItem);
-  saveJSON('./data/items.json', items);
-  res.redirect(`/location/${locationId}`);
-});
-
-// アイテム数更新
-app.post('/location/:locationId/update', (req, res) => {
-  const locationId = req.params.locationId;
-  const { item_id, new_amount } = req.body;
-  const items = loadJSON('./data/items.json');
-  const target = items.find(i => i.item_id === item_id);
-  if (target) {
-    target.amount = Number(new_amount);
-    target.updated_on = new Date().toISOString();
-    target.status = calculateStatus(target.amount, target.yellow, target.green, target.purple);
-    saveJSON('./data/items.json', items);
+    res.redirect(`/user/${user.user_id}`);
+  } catch (err) {
+    res.status(500).send('場所の追加中にエラーが発生しました');
   }
-  res.redirect(`/location/${locationId}`);
 });
 
-app.post('/location/:locationId/delete', (req, res) => {
+app.get('/location/:locationId', (req, res) => {
   const { locationId } = req.params;
   const sessionUser = req.session.user;
-  if (!sessionUser) return res.redirect('/login');
 
-  const locations = loadJSON('./data/locations.json');
-  const location = locations.find(l => l.location_id === locationId);
+  try {
+    const location = LocationRepository.findById(locationId);
+    if (!location) {
+      return res.status(404).send('場所が見つかりません');
+    }
 
-  // 作成者でない場合は拒否
-  if (!location || location.created_by !== sessionUser.user_id) {
-    return res.status(403).send('権限がありません。');
+    const items = ItemRepository.findByLocationId(locationId);
+    const members = MemberRepository.findWithUserDetails(locationId);
+
+    res.render('location', {
+      locationId,
+      locationName: location.location_name,
+      items,
+      sessionUser,
+      members,
+      locationOwnerId: location.created_by,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('データ取得中にエラーが発生しました');
   }
-
-  // 関連データ削除
-  saveJSON('./data/locations.json', locations.filter(l => l.location_id !== locationId));
-  saveJSON('./data/items.json', loadJSON('./data/items.json').filter(i => i.location_id !== locationId));
-  saveJSON('./data/members.json', loadJSON('./data/members.json').filter(m => m.location_id !== locationId));
-
-  res.redirect(`/user/${user.user_id}`);
 });
 
+// アイテム追加（SQLite対応版）
+app.post('/location/:locationId/add', async (req, res) => {
+  const { locationId } = req.params;
+  const { item_name, yellow, green, purple, amount } = req.body;
 
-app.post('/location/:locationId/delete-item', (req, res) => {
+  try {
+    const now = new Date().toISOString();
+    const yellowVal = parseInt(yellow || '1', 10);
+    const greenVal = parseInt(green || '3', 10);
+    const purpleVal = parseInt(purple || '6', 10);
+    const amountVal = parseInt(amount || '0', 10);
+    const newItem = {
+      item_id: 'itm_' + uuidv4().slice(0, 8),
+      item_name,
+      location_id: locationId,
+      yellow: yellowVal,
+      green: greenVal,
+      purple: purpleVal,
+      amount: amountVal,
+      status: calculateStatus(amountVal, yellowVal, greenVal, purpleVal),
+      inuse: 0,
+      created_at: now,
+      updated_at: now
+    };
+
+    await ItemRepository.addItem(newItem);
+    res.redirect(`/location/${locationId}`);
+  } catch (err) {
+    console.error(err); // ←★ここを追加
+    res.status(500).send('アイテム追加中にエラーが発生しました');
+  }
+});
+
+// amount増減・編集
+app.post('/location/:locationId/item/:itemId/amount', async (req, res) => {
+  const { locationId, itemId } = req.params;
+  const { action, value } = req.body;
+  try {
+    const item = await ItemRepository.findByLocationId(locationId).find(i => i.item_id === itemId);
+    if (!item) return res.redirect(`/location/${locationId}`);
+    let newAmount = item.amount;
+    if (action === 'increment') newAmount = item.amount + 1;
+    if (action === 'decrement') newAmount = Math.max(0, item.amount - 1);
+    if (action === 'set' && typeof value !== 'undefined') newAmount = Math.max(0, parseInt(value, 10));
+    await ItemRepository.updateAmount(itemId, newAmount);
+    res.redirect(`/location/${locationId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('amount変更中にエラーが発生しました');
+  }
+});
+
+// inuse状態切替+必要ならamount-1
+app.post('/location/:locationId/item/:itemId/inuse', async (req, res) => {
+  const { locationId, itemId } = req.params;
+  const { current_inuse } = req.body;
+  try {
+    // アイテム取得
+    const item = await ItemRepository.findByLocationId(locationId).find(i => i.item_id === itemId);
+    if (!item) return res.redirect(`/location/${locationId}`);
+    let newInuse = (parseInt(current_inuse, 10) + 1) % 3;
+    let newAmount = item.amount;
+    // 2→0 のときamountを-1
+    if (parseInt(current_inuse, 10) === 2 && newInuse === 0) {
+      newAmount = Math.max(0, newAmount - 1);
+      await ItemRepository.updateInuseAndAmount(itemId, newInuse, newAmount);
+    } else {
+      await ItemRepository.updateInuse(itemId, newInuse);
+    }
+    res.redirect(`/location/${locationId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('inuse切り替え中にエラーが発生しました');
+  }
+});
+
+// アイテム数更新（SQLite対応版）
+app.post('/location/:locationId/update', async (req, res) => {
+  const { locationId } = req.params;
+  const { item_id, new_amount } = req.body;
+
+  try {
+    const item = await ItemRepository.findById(item_id);
+    if (!item) {
+      return res.redirect(`/location/${locationId}`);
+    }
+
+    await ItemRepository.updateAmount(
+      item_id,
+      Number(new_amount),
+      calculateStatus(new_amount, item.yellow, item.green, item.purple)
+    );
+
+    res.redirect(`/location/${locationId}`);
+  } catch (err) {
+    res.status(500).send('アイテム更新中にエラーが発生しました');
+  }
+});
+
+// 場所削除（SQLite対応版）
+app.post('/location/:locationId/delete', async (req, res) => {
+  const { locationId } = req.params;
+  const user = req.session.user;
+  if (!user) return res.redirect('/login');
+
+  try {
+    const location = await LocationRepository.findById(locationId);
+    if (!location || location.created_by !== user.user_id) {
+      return res.status(403).send('権限がありません。');
+    }
+
+    await db.transaction()
+      .then(() => LocationRepository.delete(locationId))
+      .then(() => ItemRepository.deleteByLocationId(locationId))
+      .then(() => MemberRepository.deleteByLocationId(locationId))
+      .commit();
+
+    res.redirect(`/user/${user.user_id}`);
+  } catch (err) {
+    res.status(500).send('場所の削除中にエラーが発生しました');
+  }
+});
+
+// アイテム削除（SQLite対応版）
+app.post('/location/:locationId/delete-item', async (req, res) => {
   const { locationId } = req.params;
   const { item_id } = req.body;
 
   if (!item_id) return res.redirect(`/location/${locationId}`);
 
-  const items = loadJSON('./data/items.json');
-  const filtered = items.filter(i => i.item_id !== item_id);
-  saveJSON('./data/items.json', filtered);
-
-  res.redirect(`/location/${locationId}`);
+  try {
+    await ItemRepository.delete(item_id);
+    res.redirect(`/location/${locationId}`);
+  } catch (err) {
+    res.status(500).send('アイテム削除中にエラーが発生しました');
+  }
 });
 
-app.post('/location/:locationId/remove-member', (req, res) => {
+// メンバー削除（SQLite対応版）
+app.post('/location/:locationId/remove-member', async (req, res) => {
   const { locationId } = req.params;
   const { user_id } = req.body;
-  const sessionUser = req.session.user;
+  const user = req.session.user;
 
-  if (!sessionUser) return res.redirect('/login');
+  if (!user) return res.redirect('/login');
 
-  let members = loadJSON('./data/members.json');
+  try {
+    await MemberRepository.removeMember(user_id, locationId);
 
-  // メンバーを削除
-  members = members.filter(m => !(m.location_id === locationId && m.user_id === user_id));
-  saveJSON('./data/members.json', members);
+    // 残りメンバーがいない場合は場所も削除
+    const remaining = await MemberRepository.findByLocationId(locationId);
+    if (remaining.length === 0) {
+      await db.transaction()
+        .then(() => LocationRepository.delete(locationId))
+        .then(() => ItemRepository.deleteByLocationId(locationId))
+        .commit();
 
-  // 残りメンバーがいなければ location/items も削除
-  const remaining = members.filter(m => m.location_id === locationId);
-  if (remaining.length === 0) {
-    const locations = loadJSON('./data/locations.json').filter(l => l.location_id !== locationId);
-    saveJSON('./data/locations.json', locations);
+      return res.redirect(`/user/${user.user_id}`);
+    }
 
-    const items = loadJSON('./data/items.json').filter(i => i.location_id !== locationId);
-    saveJSON('./data/items.json', items);
-
-    res.redirect(`/user/${user.user_id}`);
+    res.redirect(`/location/${locationId}`);
+  } catch (err) {
+    res.status(500).send('メンバー削除中にエラーが発生しました');
   }
-
-  res.redirect(`/location/${locationId}`);
 });
 
-// メンバー追加
-app.post('/add-member', (req, res) => {
+// メンバー追加（SQLite対応版）
+app.post('/add-member', async (req, res) => {
   const { location_id, user_name } = req.body;
   if (!location_id || !user_name) return res.redirect(`/location/${location_id}`);
-  const users = loadJSON('./data/users.json');
-  const members = loadJSON('./data/members.json');
-  let user = users.find(u => u.user_name === user_name);
-  if (!user) {
-    return res.send(`<p>ユーザ「${user_name}」は存在しません。<a href="/user/add?name=${user_name}&location=${location_id}">作成しますか？</a></p>`);
-  }
-  const already = members.some(m => m.user_id === user.user_id && m.location_id === location_id);
-  if (!already) {
-    members.push({
+
+  try {
+    const user = await UserRepository.findByUsername(user_name);
+    if (!user) {
+      return res.send(`<p>ユーザ「${user_name}」は存在しません。<a href="/user/add?name=${user_name}&location=${location_id}">作成しますか？</a></p>`);
+    }
+
+    await MemberRepository.addMember({
       user_id: user.user_id,
       location_id,
       joined_at: new Date().toISOString()
     });
-    saveJSON('./data/members.json', members);
+
+    res.redirect(`/location/${location_id}`);
+  } catch (err) {
+    res.status(500).send('メンバー追加中にエラーが発生しました');
   }
-  res.redirect(`/location/${location_id}`);
 });
 
+// エラーハンドリング
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Internal Server Error');
+});
+
+// サーバー起動
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log('SQLite database connected');
 });
+
+module.exports = app;

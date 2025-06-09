@@ -7,20 +7,20 @@
   },
   {
     "user_id": "usr_wxyz5678",
-    "email": "yamada@example.com",
+    "email": "yamada1@example.com",
     "user_name": "田中花子",
     "created_at": "2025-06-05T04:25:34.851Z"
   },
   {
     "user_id": "usr_12ztgt",
     "user_name": "sakata",
-    "email": "yamada@example.com",
+    "email": "yamada2@example.com",
     "created_at": "2025-06-05T04:25:34.851Z"
   },
   {
     "user_id": "usr_lrwzpd",
     "user_name": "かずき",
-    "email": "yamada@example.com",
+    "email": "yamada3@example.com",
     "created_at": "2025-06-05T04:34:15.916Z"
   },
   {

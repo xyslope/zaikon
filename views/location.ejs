@@ -46,16 +46,62 @@
     <% items.forEach(item => { %>
     <div class="tile">
       <div class="location-actions">
-        <strong><%= item.item_name %></strong>
+        <% 
+          // inuseの値でアイテム名の色を決める
+          let inuseColor, inuseIcon, itemNameClass;
+          if (item.inuse == 0) { inuseColor = 'green'; inuseIcon = 'fa-solid fa-circle'; itemNameClass = 'item-green'; }
+          else if (item.inuse == 1) { inuseColor = 'yellow'; inuseIcon = 'fa-solid fa-circle'; itemNameClass = 'item-yellow'; }
+          else { inuseColor = 'red'; inuseIcon = 'fa-solid fa-circle'; itemNameClass = 'item-red'; }
+        %>
+        <strong class="<%= itemNameClass %>"><%= item.item_name %></strong>
 	<form method="POST" action="/location/<%= locationId %>/delete-item">
 	  <input type="hidden" name="item_id" value="<%= item.item_id %>">
 	  <button type="submit" onclick="return confirm('本当に削除しますか？');"><i class="fas fa-trash"></i></button>
 	</form>
       </div>
-      <form method="POST" action="/location/<%= locationId %>/update">
-        <input type="hidden" name="item_id" value="<%= item.item_id %>">
-        <label>在庫数: <input type="number" name="new_amount" value="<%= item.amount %>" min="0" required></label>
-        <button type="submit"><i class="fas fa-pen"></i></button>
+      <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/inuse" style="display:inline">
+        <input type="hidden" name="current_inuse" value="<%= item.inuse %>">
+        <input type="hidden" name="amount" value="<%= item.amount %>">
+        <button type="submit" class="inuse-btn" style="background:none; border:none; cursor:pointer;" title="状態を切り替え"
+          <% if (item.inuse == 2 && item.amount == 0) { %> disabled <% } %> >
+          <i class="fa-solid fa-circle <%= inuseColor %>"></i>
+        </button>
+      </form>
+      <div class="amount-controls" style="display:inline-flex; align-items:center; gap:8px;">
+        <% // 共通色クラスでカゴ色を決定
+        let basketColorClass = 'color-gray';
+        if (item.amount >= item.purple)      basketColorClass = 'color-green';
+        else if (item.amount >= item.yellow) basketColorClass = 'color-yellow';
+        else if (item.amount > 0)            basketColorClass = 'color-orange';
+        %>
+        <!-- カゴアイコン: ポップアップ編集 -->
+        <i class="fa-solid fa-shopping-basket basket-icon <%= basketColorClass %>" 
+           style="font-size: 2em; cursor:pointer;"
+           onclick="return openAmountEdit('<%= locationId %>', '<%= item.item_id %>', <%= item.amount %>)"></i>
+        <!-- －ボタン -->
+        <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/amount" style="display:inline;">
+          <input type="hidden" name="action" value="decrement">
+          <button type="submit" class="amount-btn" <% if (item.amount == 0) { %> disabled <% } %> >−</button>
+        </form>
+        <!-- ＋ボタン -->
+        <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/amount" style="display:inline;">
+          <input type="hidden" name="action" value="increment">
+          <button type="submit" class="amount-btn">＋</button>
+        </form>
+      </div>
+      <% // inuse色クラスも共通化して分岐 %>
+      <% let inuseColorClass;
+         if (item.inuse == 0) inuseColorClass = 'color-green';
+         else if (item.inuse == 1) inuseColorClass = 'color-yellow';
+         else inuseColorClass = 'color-red';
+      %>
+      <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/inuse" style="display:inline">
+        <input type="hidden" name="current_inuse" value="<%= item.inuse %>">
+        <input type="hidden" name="amount" value="<%= item.amount %>">
+        <button type="submit" class="inuse-btn" style="background:none; border:none; cursor:pointer;" title="状態を切り替え"
+          <% if (item.inuse == 2 && item.amount == 0) { %> disabled <% } %> >
+          <i class="fa-solid fa-circle <%= inuseColorClass %>"></i>
+        </button>
       </form>
     </div>
     <% }) %>
@@ -77,11 +123,33 @@
 	  <i class="fa-solid fa-face-grin-tongue-wink purple"></i>
 	  <input type="number" name="purple" placeholder="Purple閾値" value="6" required>
 	</div>
+  <button type="submit">追加</button>
+
       </form>
     </div>
     
   </div>
 
   <p><a href="/user/<%= sessionUser.user_id %>">← ダッシュボードへ戻る</a></p>
+<script>
+function openAmountEdit(locationId, itemId, current) {
+  const newVal = prompt('新しい在庫数を入力してください', current);
+  if (newVal === null) return false;
+  const val = parseInt(newVal, 10);
+  if (isNaN(val) || val < 0) {
+    alert('0以上の数字を入力してください');
+    return false;
+  }
+  // hidden form生成
+  const f = document.createElement('form');
+  f.method = 'POST';
+  f.action = `/location/${locationId}/item/${itemId}/amount`;
+  f.style.display = 'none';
+  f.innerHTML = `<input name="action" value="set"><input name="value" value="${val}">`;
+  document.body.appendChild(f);
+  f.submit();
+  return false;
+}
+</script>
 </body>
 </html>

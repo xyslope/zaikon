@@ -186,6 +186,46 @@
   font-size: 1em;
 }
 
-.yellow { color: #f1c40f; }
-.green  { color: #2ecc71; }
-.purple { color: #9b59b6; }
+/* 共通色クラス */
+.color-yellow { color: #f1c40f; }
+.color-green  { color: #2ecc71; }
+.color-orange { color: #ff6600; }
+.color-red    { color: #ff4444; }
+.color-gray   { color: #ccc; }
+.color-purple { color: #9b59b6; }
+
+/* 既存個別系（共通化推奨のため未使用可） */
+.yellow, .item-yellow, .basket-yellow { color: #f1c40f; }
+.green,  .item-green,  .basket-green  { color: #2ecc71; }
+.red,    .item-red                  { color: #ff4444; }
+.purple                           { color: #9b59b6; }
+.basket-gray                       { color: #ccc; }
+.basket-orange                     { color: #ff6600; }
+
+/* アイコン・ボタン調整 */
+.basket-icon {
+  margin-right: 0.6em;
+  vertical-align: middle;
+}
+.amount-btn {
+  font-size: 1.2em;
+  width: 2em; height: 2em;
+  margin: 0 3px;
+  vertical-align: middle;
+  border: none;
+  background: #eee;
+  border-radius: 50%;
+  color: #333;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.amount-btn:disabled {
+  background: #e0e0e0;
+  color: #aaa;
+  cursor: not-allowed;
+}
+.amount-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
