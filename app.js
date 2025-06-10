@@ -137,6 +137,11 @@ app.get('/user/:userId', async (req, res) => {
     }
 
     const locations = await LocationRepository.findByUserId(userId);
+    // locationsごとにitems・members取得
+    for (const loc of locations) {
+      loc.items = await ItemRepository.findByLocationId(loc.location_id);
+      loc.members = await MemberRepository.findWithUserDetails(loc.location_id);
+    }
     res.render('dashboard', {
       userId,
       locations,

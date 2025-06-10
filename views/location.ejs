@@ -46,62 +46,9 @@
     <% items.forEach(item => { %>
     <div class="tile">
       <div class="location-actions">
-        <% 
-          // inuseの値でアイテム名の色を決める
-          let inuseColor, inuseIcon, itemNameClass;
-          if (item.inuse == 0) { inuseColor = 'green'; inuseIcon = 'fa-solid fa-circle'; itemNameClass = 'item-green'; }
-          else if (item.inuse == 1) { inuseColor = 'yellow'; inuseIcon = 'fa-solid fa-circle'; itemNameClass = 'item-yellow'; }
-          else { inuseColor = 'red'; inuseIcon = 'fa-solid fa-circle'; itemNameClass = 'item-red'; }
-        %>
-        <strong class="<%= itemNameClass %>"><%= item.item_name %></strong>
-	<form method="POST" action="/location/<%= locationId %>/delete-item">
-	  <input type="hidden" name="item_id" value="<%= item.item_id %>">
-	  <button type="submit" onclick="return confirm('本当に削除しますか？');"><i class="fas fa-trash"></i></button>
-	</form>
+        <%- include('item_partial', {item: item, locationId: locationId}) %>
       </div>
-      <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/inuse" style="display:inline">
-        <input type="hidden" name="current_inuse" value="<%= item.inuse %>">
-        <input type="hidden" name="amount" value="<%= item.amount %>">
-        <button type="submit" class="inuse-btn" style="background:none; border:none; cursor:pointer;" title="状態を切り替え"
-          <% if (item.inuse == 2 && item.amount == 0) { %> disabled <% } %> >
-          <i class="fa-solid fa-circle <%= inuseColor %>"></i>
-        </button>
-      </form>
-      <div class="amount-controls" style="display:inline-flex; align-items:center; gap:8px;">
-        <% // 共通色クラスでカゴ色を決定
-        let basketColorClass = 'color-gray';
-        if (item.amount >= item.purple)      basketColorClass = 'color-green';
-        else if (item.amount >= item.yellow) basketColorClass = 'color-yellow';
-        else if (item.amount > 0)            basketColorClass = 'color-orange';
-        %>
-        <!-- カゴアイコン: ポップアップ編集 -->
-        <i class="fa-solid fa-shopping-basket basket-icon <%= basketColorClass %>" 
-           style="font-size: 2em; cursor:pointer;"
-           onclick="return openAmountEdit('<%= locationId %>', '<%= item.item_id %>', <%= item.amount %>)"></i>
-        <!-- －ボタン -->
-        <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/amount" style="display:inline;">
-          <input type="hidden" name="action" value="decrement">
-          <button type="submit" class="amount-btn" <% if (item.amount == 0) { %> disabled <% } %> >−</button>
-        </form>
-        <!-- ＋ボタン -->
-        <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/amount" style="display:inline;">
-          <input type="hidden" name="action" value="increment">
-          <button type="submit" class="amount-btn">＋</button>
-        </form>
-      </div>
-      <% // inuse色クラスも共通化して分岐 %>
-      <% let inuseColorClass;
-         if (item.inuse == 0) inuseColorClass = 'color-green';
-         else if (item.inuse == 1) inuseColorClass = 'color-yellow';
-         else inuseColorClass = 'color-red';
-      %>
-      <form method="POST" action="/location/<%= locationId %>/item/<%= item.item_id %>/inuse" style="display:inline">
-        <input type="hidden" name="current_inuse" value="<%= item.inuse %>">
-        <input type="hidden" name="amount" value="<%= item.amount %>">
-        <button type="submit" class="inuse-btn" style="background:none; border:none; cursor:pointer;" title="状態を切り替え"
-          <% if (item.inuse == 2 && item.amount == 0) { %> disabled <% } %> >
-          <i class="fa-solid fa-circle <%= inuseColorClass %>"></i>
-        </button>
+
       </form>
     </div>
     <% }) %>
@@ -112,16 +59,19 @@
 	<input type="text" name="item_name" placeholder="アイテム名" required>
 	<input type="number" name="amount" placeholder="在庫数" required>
 	<div class="label-icon-input">
-	  <i class="fa-solid fa-circle-exclamation yellow"></i>
+	  <i class="fa-solid fa-circle-exclamation red"></i>
 	  <input type="number" name="yellow" placeholder="Yellow閾値" value="1" required>
+	  <i class="red"> ＜ 補充</i>
 	</div>
 	<div class="label-icon-input">
-	  <i class="fa-solid fa-thumbs-up green"></i>
+	  <i class="fa-solid fa-thumbs-up yellow"></i>
 	  <input type="number" name="green" placeholder="Green閾値" value="3" required>
+	  <i class="yellow">＜ 要注意</i>
 	</div>
 	<div class="label-icon-input">
 	  <i class="fa-solid fa-face-grin-tongue-wink purple"></i>
 	  <input type="number" name="purple" placeholder="Purple閾値" value="6" required>
+	  <i class="purple"> ＞ 在庫過多</i>
 	</div>
   <button type="submit">追加</button>
 
@@ -149,7 +99,35 @@ function openAmountEdit(locationId, itemId, current) {
   document.body.appendChild(f);
   f.submit();
   return false;
-}
+};
+document.body.addEventListener('click', e => {
+  // 既存の±ボタン判定はそのまま利用
+
+  // inuseボタン判定・AJAX処理
+  const inuseBtn = e.target.closest('.inuse-btn');
+  if (inuseBtn && !inuseBtn.disabled) {
+    e.preventDefault();
+
+    const locationId = inuseBtn.getAttribute('data-location-id');
+    const itemId = inuseBtn.getAttribute('data-item-id');
+    const currentInuse = inuseBtn.getAttribute('data-current-inuse');
+    const amount = inuseBtn.getAttribute('data-amount');
+
+    fetch(`/location/${locationId}/item/${itemId}/inuse`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `current_inuse=${encodeURIComponent(currentInuse)}&amount=${encodeURIComponent(amount)}`
+    }).then(res => {
+      if (res.ok) {
+        location.reload();
+      } else {
+        alert('ステータス変更に失敗しました');
+      }
+    }).catch(() => {
+      alert('通信エラーが発生しました');
+    });
+  }
+});
 </script>
 </body>
 </html>

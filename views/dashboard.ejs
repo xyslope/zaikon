@@ -18,14 +18,111 @@
 </div>
 
   <h2>あなたの場所一覧</h2>
-  <ul>
+  <div class="tile-container">
     <% locations.forEach(loc => { %>
-      <li>
-        <a href="/location/<%= loc.location_id %>"><%= loc.location_name %></a>
-      </li>
+      <div class="tile">
+        <h3><a href="/location/<%= loc.location_id %>"><%= loc.location_name %></a></h3>
+        <!-- アイテムリスト -->
+        <ul style="margin:0; padding-left:1em;">
+        <% (loc.items || []).forEach(item => { %>
+          <li style="margin-bottom:2px;">
+            <%- include('item_partial', {item: item, locationId: loc.location_id }) %>
+          </li>
+        <% }) %>
+        </ul>
+        <!-- ユーザー一覧 -->
+        <div style="margin-top:0.5em; font-size:0.95em; color:#888;">
+          <i class="fa-solid fa-users"></i> 
+          <% (loc.members || []).map(m => m.user_name).join(' , ') %>
+        </div>
+      </div>
     <% }) %>
-  </ul>
+  </div>
 
   <p><a href="/me">ユーザー情報の編集</a>｜<a href="/logout">ログアウト</a></p>
+<script>
+// location.ejsと同じダイアログ
+function openAmountEdit(locationId, itemId, current) {
+  const newVal = prompt('新しい在庫数を入力してください', current);
+  if (newVal === null) return false;
+  const val = parseInt(newVal, 10);
+  if (isNaN(val) || val < 0) {
+    alert('0以上の数字を入力してください');
+    return false;
+  }
+  fetch(`/location/${locationId}/item/${itemId}/amount`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `action=set&value=${encodeURIComponent(val)}`
+  }).then(res => {
+    if (res.ok) {
+      location.reload();
+    } else {
+      alert('在庫数の更新に失敗しました');
+    }
+  });
+  return false;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('click', e => {
+    // ±ボタン用
+    if (e.target.matches('.decrement-btn') && !e.target.disabled) {
+      const btn = e.target;
+      const locationId = btn.getAttribute('data-location-id');
+      const itemId = btn.getAttribute('data-item-id');
+      fetch(`/location/${locationId}/item/${itemId}/amount`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=decrement'
+      }).then(res => {
+        if (res.ok) location.reload();
+        else alert('在庫数の更新に失敗しました');
+      });
+      return;
+    }
+
+    if (e.target.matches('.increment-btn')) {
+      const btn = e.target;
+      const locationId = btn.getAttribute('data-location-id');
+      const itemId = btn.getAttribute('data-item-id');
+      fetch(`/location/${locationId}/item/${itemId}/amount`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=increment'
+      }).then(res => {
+        if (res.ok) location.reload();
+        else alert('在庫数の更新に失敗しました');
+      });
+      return;
+    }
+
+    // inuseボタン用（ここでクリック判定）
+    const inuseBtn = e.target.closest('.inuse-btn');
+    if (inuseBtn && !inuseBtn.disabled) {
+      e.preventDefault();
+
+      const locationId = inuseBtn.getAttribute('data-location-id');
+      const itemId = inuseBtn.getAttribute('data-item-id');
+      const currentInuse = inuseBtn.getAttribute('data-current-inuse');
+      const amount = inuseBtn.getAttribute('data-amount');
+
+      fetch(`/location/${locationId}/item/${itemId}/inuse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `current_inuse=${encodeURIComponent(currentInuse)}&amount=${encodeURIComponent(amount)}`
+      }).then(res => {
+        if (res.ok) {
+          location.reload();
+        } else {
+          alert('ステータス変更に失敗しました');
+        }
+      }).catch(() => {
+        alert('通信エラーが発生しました');
+      });
+      return;
+    }
+  });
+});
+</script>
 </body>
 </html>
