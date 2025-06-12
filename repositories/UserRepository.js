@@ -27,13 +27,14 @@ static findById(userId) {
   static createUser(userData) {
     const stmt = db.prepare(`
       INSERT INTO users 
-      (user_id, user_name, email, created_at)
-      VALUES (?, ?, ?, ?)
+      (user_id, user_name, email, user_description, created_at)
+      VALUES (?, ?, ?, ?, ?)
     `);
     return stmt.run(
       userData.user_id,
       userData.user_name,
       userData.email,
+      userData.user_description,
       userData.created_at
     );
   }
@@ -45,6 +46,22 @@ static findById(userId) {
       JOIN members m ON l.location_id = m.location_id
       WHERE m.user_id = ?
     `).all(userId);
+  }
+  
+  // メールアドレスでユーザー検索
+  static findByEmail(email) {
+    return db.prepare('SELECT * FROM users WHERE email = ?').get(email) || null;
+  }
+
+  // 全ユーザー取得
+  static findAll() {
+    return db.prepare('SELECT * FROM users').all();
+  }
+
+  // ユーザー名で部分一致検索（最大10件）
+  static searchByUsernameLike(query) {
+    return db.prepare('SELECT user_id, user_name, user_description FROM users WHERE user_name LIKE ? LIMIT 10')
+      .all(`%${query}%`);
   }
 }
 

@@ -17,7 +17,12 @@ const MemberRepository = require('./repositories/MemberRepository');
 
 const app = express();
 const PORT = 3000;
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
+
+const adminKey = process.env.ADMIN_KEY || '';
+console.log('adminKey:', adminKey);
 
 // セッション設定（元の設定を保持）
 app.use(session({
@@ -49,22 +54,30 @@ function calculateStatus(amount, yellow, green, purple) {
   return 'Red';
 }
 
-// 認証チェックミドルウェア（元のロジックを保持）
 app.use((req, res, next) => {
   const allowedPaths = [
     /^\/$/,
     /^\/login/,
     /^\/user\/[\w-]+$/,
-    /^\/register/
+    /^\/register/,
+    /^\/send-user-link$/,
+    /^\/send-admin-link$/,
+    new RegExp(`^\\/admin\\/${adminKey.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}$`)
   ];
-
+  console.log(req.path);
   const isAllowed = allowedPaths.some(pattern => pattern.test(req.path));
+  const isAdminPath = req.path.startsWith(`/admin/${adminKey}`);
 
-  if (!req.session.user && !isAllowed) {
+  if (isAdminPath) {
+    req.session.user = { role: 'admin', name: 'Admin' };
+  }
+
+  if (!req.session.user && !isAllowed && !isAdminPath) {
     return res.redirect('/');
   }
   next();
 });
+
 
 // ランディングページ（変更なし）
 app.get('/', (req, res) => {
@@ -98,8 +111,8 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-  const { user_name, email } = req.body;
-  if (!user_name || !email) return res.redirect('/register');
+  const { user_name, email, user_description } = req.body;
+  if (!user_name || !email || !user_description) return res.redirect('/register');
 
   try {
     const existing = await UserRepository.findByUsernameOrEmail(user_name, email);
@@ -111,6 +124,7 @@ app.post('/register', async (req, res) => {
       user_id: 'usr_' + uuidv4().slice(0, 8),
       user_name,
       email,
+      user_description,
       created_at: new Date().toISOString()
     };
 
@@ -405,6 +419,176 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal Server Error');
 });
 
+// メール送信設定
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
+
+// POST: メールアドレスからユーザページ送信
+app.post('/send-user-link', async (req, res) => {
+  const { email } = req.body;
+  console.log('POST /send-user-link called');
+  console.log('Request body:', req.body);
+  if (!email) {
+    return res.status(400).send('メールアドレスを入力してください');
+  }
+
+  try {
+    const user = UserRepository.findByEmail(email);
+    if (!user) {
+      return res.status(404).send('該当ユーザが見つかりません');
+    }
+
+    const userPageUrl = `http://localhost:${PORT}/user/${user.user_id}`;
+    
+    const mailOptions = {
+      from: 'zaikon_at_ecofirm.com <zaikon_at_ecofirm.com>',
+      to: email,
+      subject: 'Zaikon ユーザページのご案内',
+      text: `Zaikonでのあなたのユーザページです。\n保存してご使用ください。\n\n${userPageUrl}`
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.send('ユーザページのURLをメールで送信しました。');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('メール送信中にエラーが発生しました');
+  }
+});
+
+// POST: 管理者メールアドレスにAdminページリンク送信
+app.post('/send-admin-link', async (req, res) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminKey = process.env.ADMIN_KEY || '';
+  if (!adminEmail) {
+    return res.status(500).send('管理者メールアドレスが設定されていません');
+  }
+
+  try {
+    // Admin用の特別なトークンや認証はここではなし（簡易版）
+    const adminPageUrl = `http://localhost:${PORT}/admin/${adminKey}`;
+
+    const mailOptions = {
+      from: 'zaikon_at_ecofirm.com <zaikon_at_ecofirm.com>',
+      to: adminEmail,
+      subject: 'Zaikon 管理者ページのご案内',
+      text: `管理者ページへのリンクです。\n保存してご使用ください。\n\n${adminPageUrl}`
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.send('管理者ページのURLをメールで送信しました。');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('メール送信中にエラーが発生しました');
+  }
+});
+
+
+
+// GET: 管理者ページ（admin/ADMIN_KEY 形式）
+app.get(`/admin/${adminKey}`, async (req, res) => {
+  try {
+    const users = await UserRepository.findAll();
+    const locations = await LocationRepository.getAllLocations();
+    res.render('admin', { users, locations, ADMIN_KEY: adminKey });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('管理者ページ読み込み中にエラーが発生しました');
+  }
+});
+
+// POST: DBクリア（全テーブルのデータ削除）
+app.post(`/admin/${adminKey}/clear-db`, async (req, res) => {
+  try {
+    // トランザクションで削除処理
+    await db.transaction(() => {
+      db.prepare('DELETE FROM users').run();
+      db.prepare('DELETE FROM locations').run();
+      db.prepare('DELETE FROM items').run();
+      db.prepare('DELETE FROM members').run();
+    })();
+    res.send('データベースのデータを全てクリアしました');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DBクリア処理中にエラーが発生しました');
+  }
+});
+
+// POST: ユーザ一括削除
+app.post(`/admin/${adminKey}/delete-users`, async (req, res) => {
+  try {
+    db.prepare('DELETE FROM users').run();
+    res.send('ユーザを一括削除しました');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('ユーザ一括削除中にエラーが発生しました');
+  }
+});
+
+// POST: 場所一括削除
+app.post(`/admin/${adminKey}/delete-locations`, async (req, res) => {
+  try {
+    db.prepare('DELETE FROM locations').run();
+    res.send('場所を一括削除しました');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('場所一括削除中にエラーが発生しました');
+  }
+});
+
+// POST: 指定ユーザ削除
+app.post(`/admin/${adminKey}/delete-user`, async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) {
+    return res.status(400).send('ユーザIDが指定されていません');
+  }
+
+  try {
+    db.prepare('DELETE FROM users WHERE user_id = ?').run(user_id);
+    res.redirect(`/admin/${adminKey}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('ユーザ削除中にエラーが発生しました');
+  }
+});
+
+// POST: 指定場所削除
+app.post(`/admin/${adminKey}/delete-location`, async (req, res) => {
+  const { location_id } = req.body;
+  if (!location_id) {
+    return res.status(400).send('場所IDが指定されていません');
+  }
+
+  try {
+    db.prepare('DELETE FROM locations WHERE location_id = ?').run(location_id);
+    res.redirect(`/admin/${adminKey}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('場所削除中にエラーが発生しました');
+  }
+});
+
+// GET: ユーザ名部分検索API
+app.get('/api/users', (req, res) => {
+  const { query } = req.query;
+  if (!query || query.trim() === '') {
+    return res.json([]);
+  }
+
+  try {
+    const users = UserRepository.searchByUsernameLike(query);
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'ユーザ検索中にエラーが発生しました' });
+  }
+});
 // サーバー起動
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

@@ -35,7 +35,10 @@
   <% }) %>
   <form action="/add-member" method="POST">
     <input type="hidden" name="location_id" value="<%= locationId %>">
-    <input type="text" name="user_name" placeholder="ユーザー名" required>
+    <div id="user-suggestions" style="position: relative;">
+      <input type="text" id="userNameInput" name="user_name" placeholder="ユーザー名" autocomplete="off" required>
+      <div id="suggestions-list" style="position: absolute; background: white; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; width: 100%; z-index: 1000;"></div>
+    </div>
     <button type="submit"><i class="fas fa-plus"></i></button>
   </form>
   </div>
@@ -128,6 +131,57 @@ document.body.addEventListener('click', e => {
     });
   }
 });
+// ユーザー名検索サジェスト
+const userInput = document.getElementById('userNameInput');
+const suggestionsList = document.getElementById('suggestions-list');
+
+userInput.addEventListener('input', async () => {
+  const query = userInput.value.trim();
+  if (query.length < 3) {
+    suggestionsList.innerHTML = '';
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/users?query=${encodeURIComponent(query)}`);
+    const users = await response.json();
+
+    if (users.length === 0) {
+      suggestionsList.innerHTML = '<div style="padding: 5px;">ユーザが見つかりません。</div>';
+      return;
+    }
+
+    suggestionsList.innerHTML = '';
+    users.forEach(user => {
+      const item = document.createElement('div');
+      item.style.padding = '5px';
+      item.style.cursor = 'pointer';
+      item.style.borderBottom = '1px solid #ddd';
+
+      const nameDiv = document.createElement('div');
+      nameDiv.textContent = user.user_name;
+      nameDiv.style.fontWeight = 'bold';
+
+      const descDiv = document.createElement('div');
+      descDiv.textContent = user.user_description ? user.user_description.slice(0, 30) + (user.user_description.length > 30 ? '...' : '') : '';
+      descDiv.style.fontSize = 'smaller';
+      descDiv.style.color = '#666';
+
+      item.appendChild(nameDiv);
+      item.appendChild(descDiv);
+
+      item.addEventListener('click', () => {
+        userInput.value = user.user_name;
+        suggestionsList.innerHTML = '';
+      });
+
+      suggestionsList.appendChild(item);
+    });
+  } catch (err) {
+    suggestionsList.innerHTML = '<div style="padding: 5px; color: red;">検索エラーが発生しました</div>';
+  }
+});
+
 </script>
 </body>
 </html>
