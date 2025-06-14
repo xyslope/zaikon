@@ -6,7 +6,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 // db.js の接続確認
 // db.js
-const db = require('better-sqlite3')('zaikon.db', {
+const db = require('better-sqlite3')('/data/zaikon.db', {
   verbose: console.log, // SQLログ表示
   timeout: 5000 // タイムアウト設定
 });
