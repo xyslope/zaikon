@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>ダッシュボード</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -43,7 +44,7 @@
     <% }) %>
   </div>
   <div class="form-box">
-    <form action="/user/add-location" method="POST">
+    <form action="/user/<%= sessionUser.user_id %>/add-location" method="POST">
       <input type="text" name="location_name" placeholder="新しい場所名" required>
       <button type="submit">場所を追加</button>
     </form>

@@ -38,7 +38,7 @@ console.log('adminKey:', adminKey);
 
 // セッション設定（元の設定を保持）
 app.use(session({
-  secret: process.env.SESSION_KEY || '',
+  secret: 'hogehogemonger',
   resave: false,
   saveUninitialized: false,
   cookie: { 
@@ -220,9 +220,9 @@ app.post('/user/:userId/edit', async (req, res) => {
 });
 
 // 場所追加（SQLite対応版）
-app.post('/user/add-location', async (req, res) => {
+app.post('/user/:userId/add-location', async (req, res) => {
   const user = req.session.user;
-  if (!user) return res.redirect('/login');
+  if (!user) return res.redirect('/');
 
   const { location_name } = req.body;
   if (!location_name) return res.redirect(`/user/${user.user_id}`);
@@ -230,22 +230,26 @@ app.post('/user/add-location', async (req, res) => {
   try {
     const locationId = 'loc_' + uuidv4().slice(0, 8);
     const now = new Date().toISOString();
-
+    console.log('場所を追加するよ')
     await LocationRepository.create({
       location_id: locationId,
       location_name,
+      owner_id: user.user_id,      // ここを追加
       created_by: user.user_id,
       created_at: now
     });
+    console.log('メンバーも追加するよ')
 
     await MemberRepository.addMember({
       user_id: user.user_id,
       location_id: locationId,
       joined_at: now
     });
+    console.log('元に戻るよ')
 
     res.redirect(`/user/${user.user_id}`);
   } catch (err) {
+    console.error('場所追加時エラー:', err);
     res.status(500).send('場所の追加中にエラーが発生しました');
   }
 });

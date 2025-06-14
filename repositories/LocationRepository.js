@@ -29,6 +29,13 @@ static findByUserId(userId) {
   static findById(locationId) {
     return db.prepare('SELECT * FROM locations WHERE location_id = ?').get(locationId) || null;
   }
+
+  static create({ location_id, location_name, owner_id, created_by, created_at, updated_at = null }) {
+    return db.prepare(`
+      INSERT INTO locations (location_id, location_name, owner_id, created_by, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(location_id, location_name, owner_id, created_by, created_at, updated_at);
+  }
   
 }
 
