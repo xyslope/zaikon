@@ -51,6 +51,34 @@
     </tbody>
   </table>
 
+  <h2>Banメールアドレス管理</h2>
+
+  <form id="banAddForm" method="POST" action="/admin/<%= ADMIN_KEY %>/ban-email/add">
+    <label>メールアドレス: <input type="email" name="email" required></label>
+    <label>理由: <input type="text" name="reason"></label>
+    <button type="submit">Banリストに追加</button>
+  </form>
+
+  <table border="1">
+    <thead>
+      <tr><th>メールアドレス</th><th>理由</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+    <% banEmails.forEach(ban => { %>
+      <tr>
+        <td><%= ban.email %></td>
+        <td><%= ban.reason || '' %></td>
+        <td>
+          <form method="POST" action="/admin/<%= ADMIN_KEY %>/ban-email/delete" style="display:inline;">
+            <input type="hidden" name="email" value="<%= ban.email %>">
+            <button type="submit" onclick="return confirm('本当にBanメールを解除しますか？')">解除</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+
   <p><a href="/admin/<%= ADMIN_KEY %>">管理者ページトップ</a></p>
 </body>
 </html>

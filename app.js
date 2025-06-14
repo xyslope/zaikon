@@ -14,6 +14,7 @@ const ItemRepository = require('./repositories/ItemRepository');
 const LocationRepository = require('./repositories/LocationRepository');
 const UserRepository = require('./repositories/UserRepository');
 const MemberRepository = require('./repositories/MemberRepository');
+const BanEmailRepository = require('./repositories/BanEmailRepository');
 
 const app = express();
 const PORT = 3000;
@@ -57,7 +58,6 @@ function calculateStatus(amount, yellow, green, purple) {
 app.use((req, res, next) => {
   const allowedPaths = [
     /^\/$/,
-    /^\/login/,
     /^\/user\/[\w-]+$/,
     /^\/register/,
     /^\/send-user-link$/,
@@ -84,22 +84,6 @@ app.get('/', (req, res) => {
   res.render('landing');
 });
 
-// ログイン処理（SQLite対応版）
-app.post('/login', (req, res) => {
-  const { user_name, email } = req.body;
-  try {
-    const user = UserRepository.findByCredentials(user_name, email);
-    if (user) {
-      req.session.user = user;
-      return res.redirect(`/user/${user.user_id}`);
-    }
-    res.send('<p>ユーザーが見つかりません。<a href="/login">戻る</a></p>');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('ログイン処理中にエラーが発生しました');
-  }
-});
-
 // ログアウト（変更なし）
 app.get('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
@@ -110,15 +94,43 @@ app.get('/register', (req, res) => {
   res.render('register');
 });
 
+// GET: ユーザー編集ページ
+app.get('/user/:userId/edit', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await UserRepository.findById(userId);
+    if (!user) {
+      return res.status(404).send('ユーザが見つかりません');
+    }
+    res.render('user_edit', { user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('ユーザ情報取得中にエラーが発生しました');
+  }
+});
+
 app.post('/register', async (req, res) => {
   const { user_name, email, user_description } = req.body;
   if (!user_name || !email || !user_description) return res.redirect('/register');
-
+  console.log('ユーザを追加します')
   try {
-    const existing = await UserRepository.findByUsernameOrEmail(user_name, email);
-    if (existing) {
-      return res.send('<p>同じユーザー名またはメールアドレスが既に存在します。<a href="/register">戻る</a></p>');
+    // Banリストにあるメールアドレスは登録拒否
+    const banned = BanEmailRepository.findByEmail(email);
+    if (banned) {
+      return res.send('<p>このメールアドレスは登録を禁止されています。<a href="/register">戻る</a></p>');
     }
+    console.log('許可されているユーザです。')
+    try {
+      const existing = await UserRepository.findByEmail(email);
+      console.log('existing:', existing);
+      if (existing) {
+        return res.send('<p>同じメールアドレスが既に存在します。<a href="/register">戻る</a></p>');
+      }
+    } catch (err) {
+      console.error('findByUsernameOrEmail error:', err);
+      return res.status(500).send('ユーザー検索中にエラーが発生しました');
+    }
+        console.log('ほんとうにユーザを追加します。')
 
     const newUser = {
       user_id: 'usr_' + uuidv4().slice(0, 8),
@@ -127,7 +139,8 @@ app.post('/register', async (req, res) => {
       user_description,
       created_at: new Date().toISOString()
     };
-
+    console.log('DBにユーザを追加します')
+ 
     await UserRepository.createUser(newUser);
     req.session.user = newUser;
     res.redirect(`/user/${newUser.user_id}`);
@@ -163,6 +176,35 @@ app.get('/user/:userId', async (req, res) => {
     });
   } catch (err) {
     res.status(500).send('データ取得中にエラーが発生しました');
+  }
+});
+
+// POST: ユーザー情報更新
+app.post('/user/:userId/edit', async (req, res) => {
+  const sessionUser = req.session.user;
+  if (!sessionUser) return res.redirect('/login');
+
+  const { userId } = req.params;
+  if (sessionUser.user_id !== userId) return res.status(403).send('権限がありません');
+
+  const { user_name, user_description } = req.body;
+  if (!user_name || !user_description) return res.redirect(`/user/${userId}/edit`);
+
+  try {
+    await UserRepository.updateUser({
+      user_id: userId,
+      user_name,
+      user_description
+    });
+
+    // セッション情報更新
+    req.session.user.user_name = user_name;
+    req.session.user.user_description = user_description;
+
+    res.redirect(`/user/${userId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('ユーザー情報更新中にエラーが発生しました');
   }
 });
 
@@ -490,19 +532,6 @@ app.post('/send-admin-link', async (req, res) => {
 });
 
 
-
-// GET: 管理者ページ（admin/ADMIN_KEY 形式）
-app.get(`/admin/${adminKey}`, async (req, res) => {
-  try {
-    const users = await UserRepository.findAll();
-    const locations = await LocationRepository.getAllLocations();
-    res.render('admin', { users, locations, ADMIN_KEY: adminKey });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('管理者ページ読み込み中にエラーが発生しました');
-  }
-});
-
 // POST: DBクリア（全テーブルのデータ削除）
 app.post(`/admin/${adminKey}/clear-db`, async (req, res) => {
   try {
@@ -555,6 +584,76 @@ app.post(`/admin/${adminKey}/delete-user`, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('ユーザ削除中にエラーが発生しました');
+  }
+});
+
+// POST: Banメール追加
+app.post(`/admin/${adminKey}/ban-email/add`, async (req, res) => {
+  const { email, reason } = req.body;
+  if (!email) {
+    return res.status(400).send('メールアドレスを入力してください');
+  }
+
+  try {
+    BanEmailRepository.add(email, reason || '');
+    res.redirect(`/admin/${adminKey}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Banメールの追加中にエラーが発生しました');
+  }
+});
+
+// POST: Banメール削除
+app.post(`/admin/${adminKey}/ban-email/delete`, async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).send('メールアドレスが指定されていません');
+  }
+
+  try {
+    BanEmailRepository.removeByEmail(email);
+    res.redirect(`/admin/${adminKey}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Banメールの削除中にエラーが発生しました');
+  }
+});
+
+// 拡張：管理者ページにbanEmailsデータを渡す
+app.get(`/admin/${adminKey}`, async (req, res) => {
+  try {
+    const users = await UserRepository.findAll();
+    const locations = await LocationRepository.getAllLocations();
+    const banEmails = await BanEmailRepository.findAll();
+    res.render('admin', { users, locations, banEmails, ADMIN_KEY: adminKey });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('管理者ページ読み込み中にエラーが発生しました');
+  }
+});
+
+
+// API: ユーザ要補充リスト取得
+app.get('/api/dashboard/:userId/replenish', (req, res) => {
+  const { userId } = req.params;
+  try {
+    const items = ItemRepository.findItemsByUserWithConditions(userId, 2, null);
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '要補充リスト取得中にエラーが発生しました' });
+  }
+});
+
+// API: ユーザ買い物リスト取得
+app.get('/api/dashboard/:userId/shopping', (req, res) => {
+  const { userId } = req.params;
+  try {
+    const items = ItemRepository.findItemsByUserWithConditions(userId, null, 'Red');
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '買い物リスト取得中にエラーが発生しました' });
   }
 });
 

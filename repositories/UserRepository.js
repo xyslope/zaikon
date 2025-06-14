@@ -63,6 +63,15 @@ static findById(userId) {
     return db.prepare('SELECT user_id, user_name, user_description FROM users WHERE user_name LIKE ? LIMIT 10')
       .all(`%${query}%`);
   }
+
+// ユーザー情報更新
+static updateUser(userData) {
+  const stmt = db.prepare(`
+    UPDATE users SET user_name = ?, user_description = ? WHERE user_id = ?
+  `);
+  return stmt.run(userData.user_name, userData.user_description, userData.user_id);
+}
+
 }
 
 module.exports = UserRepository;

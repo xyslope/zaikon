@@ -9,22 +9,29 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>在庫管理システム</h1>
-  <h2>ログイン：</h2>
-      <form method="POST" action="/login">
-	<label>ユーザー名: <input type="text" name="user_name" required></label><br>
-	<label>メールアドレス: <input type="email" name="email" required></label><br>
-	<button type="submit">ログイン</button>
-      </form>
+<h3> 気が利いてるって言われたらうれしい</h3>
+<img src="images/mainlogo.png">
+<h1>Silent Keeper</h1>
+<h1>やってるつもりなのに、使えない人って言われてしまう人、いるよね</h1>
+<ul>
+  <li>洗剤、空やん？使ったら補充しといてよ！</li>
+  <li>シャンプー詰め替えるの、いつもうちやねんけど？</li>
+  <li>足りなくなりそうなら、買ってきてほしい</li>
+  <li>手伝いたいけど、何が足りないか分からん</li>
+  <li>ティッシュの予備、残ってたっけ？</li>
+  <li>買ってきたら、同じもの家にあった！</li>
+</ul>
 
-  <h2>ユーザーページをメールで受け取る</h2>
+<h1>補充・買い物やって、「使える相方」になろう</h1>
+  <h2>利用は直接ユーザーページを開くだけ</h2>
+  ページ忘れた？メールで受け取れます。
   <form id="sendLinkForm">
     <label>メールアドレス: <input type="email" name="email" id="emailInput" required></label><br>
     <button type="submit">送信</button>
   </form>
   <p id="sendLinkMessage"></p>
 
-  <p><a href="/register">ユーザー登録はこちら</a></p>
+  <p>はじめての方は<a href="/register">ユーザー登録</a>からどうぞ</p>
 
   <script>
     document.getElementById('sendLinkForm').addEventListener('submit', async (e) => {

@@ -75,6 +75,27 @@ class ItemRepository {
       WHERE item_id = ?
     `).run(newInuse, itemId);
   }
+  
+  // ユーザIDでアイテム抽出（任意のinuse・status条件を渡せる）
+  static findItemsByUserWithConditions(userId, inuse = null, status = null) {
+    let query = `
+      SELECT i.*, l.location_name FROM items i
+      JOIN locations l ON i.location_id = l.location_id
+      JOIN members m ON l.location_id = m.location_id
+      WHERE m.user_id = ?
+    `;
+    const params = [userId];
+
+    if (inuse !== null) {
+      query += ' AND i.inuse = ?';
+      params.push(inuse);
+    }
+    if (status !== null) {
+      query += ' AND i.status = ?';
+      params.push(status);
+    }
+    return db.prepare(query).all(...params);
+  }
 }
 
 module.exports = ItemRepository;
