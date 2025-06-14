@@ -21,6 +21,17 @@ const PORT = 3000;
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
+const runMigrations = require('./migrate_runner');
+
+(async () => {
+  await runMigrations();
+
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+    console.log('SQLite database connected');
+  });
+})();
+
 
 const adminKey = process.env.ADMIN_KEY || '';
 console.log('adminKey:', adminKey);
