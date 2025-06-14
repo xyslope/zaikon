@@ -41,7 +41,11 @@ async function runMigrations() {
       }
 
       // 適用済み記録を追加
-      db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(file.replace(/\.js$/, ''));
+      const migName = file.replace(/\.js$/, '');
+      const exists = db.prepare('SELECT 1 FROM schema_migrations WHERE name = ?').get(migName);
+      if (!exists) {
+        db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(migName);
+      }
       console.log(`Migration applied: ${file}`);
     } catch (err) {
       console.error(`Error applying migration ${file}:`, err);
