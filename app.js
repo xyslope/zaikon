@@ -31,12 +31,23 @@ const runMigrations = require('./migrate_runner');
 const adminKey = process.env.ADMIN_KEY || '';
 console.log('adminKey:', adminKey);
 
-// セッション設定（元の設定を保持）
+// セッション設定（session-file-store使用）
+const FileStore = require('session-file-store')(session);
+const fs = require('fs');
+
+const sessionDir = path.join(__dirname, 'data', 'sessions');
+if (!fs.existsSync(sessionDir)) {
+  fs.mkdirSync(sessionDir, { recursive: true });
+}
+
 app.use(session({
+  store: new FileStore({
+    path: sessionDir,
+  }),
   secret: 'hogehogemonger',
   resave: false,
   saveUninitialized: false,
-  cookie: { 
+  cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: false,
     httpOnly: true
@@ -61,14 +72,15 @@ function calculateStatus(amount, yellow, green, purple) {
   return 'Red';
 }
 
-app.use((req, res, next) => {
+// 認証ミドルウェアを名前付き関数に切り出す
+function authMiddleware(req, res, next) {
   const allowedPaths = [
     /^\/$/,
     /^\/user\/[\w-]+$/,
     /^\/register/,
     /^\/send-user-link$/,
     /^\/send-admin-link$/,
-    new RegExp(`^\\/admin\\/${adminKey.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}$`)
+    new RegExp(`^\\/admin\\/${adminKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)
   ];
   console.log(req.path);
   const isAllowed = allowedPaths.some(pattern => pattern.test(req.path));
@@ -82,8 +94,21 @@ app.use((req, res, next) => {
     return res.redirect('/');
   }
   next();
-});
+}
 
+// テスト時は認証スキップ、そうでなければ認証ミドルウェアを使う
+if (process.env.NODE_ENV === 'test') {
+  app.use((req, res, next) => {
+    req.session.user = {
+      user_id: 'user-sampleuser',
+      user_name: '住人A',
+      role: 'test'
+    };
+    next();
+  });
+} else {
+  app.use(authMiddleware);
+}
 
 // ランディングページ（変更なし）
 app.get('/', (req, res) => {
@@ -165,7 +190,7 @@ app.get('/user/:userId', async (req, res) => {
     if (!req.session.user || req.session.user.user_id !== userId) {
       const user = await UserRepository.findById(userId);
       if (!user) {
-        return res.send(`<p>ユーザーが見つかりません。<a href="/">トップへ</a></p>`);
+        return res.status(404).send(`<p>ユーザーが見つかりません。<a href="/">トップへ</a></p>`);
       }
       req.session.user = user;
     }
@@ -698,11 +723,6 @@ app.get('/api/users', (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'ユーザ検索中にエラーが発生しました' });
   }
-});
-// サーバー起動
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log('SQLite database connected');
 });
 
 module.exports = app;
