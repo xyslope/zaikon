@@ -38,7 +38,7 @@ console.log('adminKey:', adminKey);
 
 // セッション設定（元の設定を保持）
 app.use(session({
-  secret: 'hogehogemonger',
+  secret: process.env.SESSION_KEY || '',
   resave: false,
   saveUninitialized: false,
   cookie: { 
