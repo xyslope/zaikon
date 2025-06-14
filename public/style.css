@@ -229,3 +229,39 @@
   align-items: center;
   gap: 8px;
 }
+
+/* --- スマホ対応 レスポンシブ調整 --- */
+@media (max-width: 600px) {
+  body {
+    font-size: 18px;
+    padding: 0.5em;
+  }
+  .tile-container {
+    max-width: 100%;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .form-box, .form-block {
+    max-width: 98vw;
+    padding: 1em;
+  }
+  h1 {
+    font-size: 1.2em;
+  }
+  input[type="text"],
+  input[type="number"] {
+    font-size: 1.1em;
+  }
+  button, .form-box button, .danger-button, .amount-btn {
+    font-size: 1.1em;
+    padding: 0.9em 1.4em;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .location-item {
+    padding: 0.6em;
+  }
+  .amount-controls {
+    gap: 6px;
+  }
+}
