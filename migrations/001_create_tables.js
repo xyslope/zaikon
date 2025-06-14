@@ -98,4 +98,4 @@ function run() {
   console.log('001_create_tables migration applied');
 }
 
-run();
+module.exports.run = run;
