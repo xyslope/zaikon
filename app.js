@@ -4,12 +4,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-// db.js の接続確認
-// db.js
-const db = require('better-sqlite3')('/data/zaikon.db', {
-  verbose: console.log, // SQLログ表示
-  timeout: 5000 // タイムアウト設定
-});
+
 const ItemRepository = require('./repositories/ItemRepository');
 const LocationRepository = require('./repositories/LocationRepository');
 const UserRepository = require('./repositories/UserRepository');

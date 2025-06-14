@@ -1,7 +1,12 @@
+const path = require('path');
+const isProd = process.env.NODE_ENV === 'production' || process.env.FLY_APP_NAME;
+const dbPath = isProd ? '/data/zaikon.db' : path.join(__dirname, 'data', 'zaikon.db');
 const Database = require('better-sqlite3');
-const db = new Database('zaikon.db');
-
-// テーブル作成（外部キー制約有効化）
+const db = new Database(dbPath, {
+  verbose: console.log,
+  timeout: 5000
+});
+module.exports = db;// テーブル作成（外部キー制約有効化）
 db.pragma('foreign_keys = ON');
 
 db.exec(`
