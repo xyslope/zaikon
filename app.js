@@ -151,6 +151,7 @@ app.post('/register', async (req, res) => {
     req.session.user = newUser;
     res.redirect(`/user/${newUser.user_id}`);
   } catch (err) {
+    console.error('ユーザー登録中のエラー:', err);
     res.status(500).send('ユーザー登録中にエラーが発生しました');
   }
 });
