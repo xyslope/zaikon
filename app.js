@@ -4,6 +4,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const db = require('./db');
 
 const ItemRepository = require('./repositories/ItemRepository');
 const LocationRepository = require('./repositories/LocationRepository');
@@ -548,11 +549,10 @@ app.post('/send-admin-link', async (req, res) => {
   }
 
   try {
-    // Admin用の特別なトークンや認証はここではなし（簡易版）
     const adminPageUrl = `http://localhost:${PORT}/admin/${adminKey}`;
 
     const mailOptions = {
-      from: 'zaikon_at_ecofirm.com <zaikon_at_ecofirm.com>',
+      from: 'zaikon_at_ecofirm.com <zaikon@ecofirm.com>',
       to: adminEmail,
       subject: 'Zaikon 管理者ページのご案内',
       text: `管理者ページへのリンクです。\n保存してご使用ください。\n\n${adminPageUrl}`
@@ -655,7 +655,6 @@ app.post(`/admin/${adminKey}/ban-email/delete`, async (req, res) => {
   }
 });
 
-// 拡張：管理者ページにbanEmailsデータを渡す
 app.get(`/admin/${adminKey}`, async (req, res) => {
   try {
     const users = await UserRepository.findAll();

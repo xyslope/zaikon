@@ -2,3 +2,4 @@
 .env
 zaikon.db
 /data/zaikon.db
+/data/*
