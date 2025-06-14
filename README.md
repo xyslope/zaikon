@@ -3,6 +3,27 @@
 ## スクリプトの起動
 > npm run dev
 
+## デプロイ方法
+Fly.ioの公式サイト（https://fly.io） でアカウント登録。
+ローカルにFly CLIをインストール（WindowsならWingetやChocolatey、Mac/LinuxならHomebrewやスクリプトで）。
+CLIでログイン fly auth login
+プロジェクトディレクトリに移動して、fly launchを実行（アプリ名、リージョン、Dockerfile自動検出など対話式）。
+fly deploy でデプロイ。
+デプロイ完了後、生成されたURLでアプリがアクセス可能。
+
+Flyは環境変数の設定もCLIから可能：fly secrets set ADMIN_KEY=yourkey
+
+# Fly CLIインストール済みと仮定
+
+cd your-project-directory
+fly auth login
+fly launch  # 対話に答えるだけで設定完了
+fly deploy
+
+Fly CLIでログイン（ローカル環境で）
+fly secrets set コマンドで必要な環境変数（ADMIN_KEYなど）を設定
+fly deploy コマンドでデプロイ
+
 ## アイコンたち
 | 機能    | テキストボタン           | アイコン（Font Awesome）             |
 | ----- | ----------------- | ------------------------------ |
