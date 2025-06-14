@@ -63,6 +63,7 @@ function run() {
   const sampleUserId = 'user-sampleuser';
   const sampleUserEmail = 'residenta_at_ecofirm.com';
   const sampleUserName = '住人A';
+  const sampleUserDescription = '住人A';
   const sampleLocationId = 'loc-samplelocation';
   const sampleLocationName = 'みんなのいえ';
   const now = new Date().toISOString();
@@ -70,8 +71,8 @@ function run() {
   // 既存のサンプルユーザがいなければ追加
   const userExists = db.prepare('SELECT user_id FROM users WHERE user_id = ?').get(sampleUserId);
   if (!userExists) {
-    db.prepare(`INSERT INTO users (user_id, email, user_name, created_at) VALUES (?, ?, ?, ?)`)
-      .run(sampleUserId, sampleUserEmail, sampleUserName, now);
+    db.prepare(`INSERT INTO users (user_id, email, user_name, user_description, created_at) VALUES (?, ?, ?, ?, ?)`)
+      .run(sampleUserId, sampleUserEmail, sampleUserName, sampleUserDescription, now);
   }
 
   // 既存のサンプル場所がいなければ追加
