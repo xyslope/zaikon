@@ -246,7 +246,10 @@ app.post('/user/:userId/edit', async (req, res) => {
 // 場所追加（SQLite対応版）
 app.post('/user/:userId/add-location', async (req, res) => {
   const user = req.session.user;
-  if (!user) return res.redirect('/');
+  if (!user) {
+    console.warn('セッション切れで場所追加拒否');
+    return res.status(401).send('セッションが切れています。再ログインしてください。');
+  }
 
   const { location_name } = req.body;
   if (!location_name) return res.redirect(`/user/${user.user_id}`);
