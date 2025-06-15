@@ -22,12 +22,10 @@ const runMigrations = require('./migrate_runner');
 (async () => {
   await runMigrations();
 
-  if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-      console.log('SQLite database connected');
-    });
-  }
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+    console.log('SQLite database connected');
+  });
 })();
 
 
