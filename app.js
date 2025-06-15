@@ -289,6 +289,17 @@ app.get('/location/:locationId', (req, res) => {
       return res.status(404).send('場所が見つかりません');
     }
 
+    if (!sessionUser) {
+      return res.status(403).send('アクセス権がありません（未ログイン）');
+    }
+
+    const isMember = MemberRepository.findWithUserDetails(locationId)
+      .some(member => member.user_id === sessionUser.user_id);
+
+    if (!isMember) {
+      return res.status(403).send('アクセス権がありません');
+    }
+
     const items = ItemRepository.findByLocationId(locationId);
     const members = MemberRepository.findWithUserDetails(locationId);
 
