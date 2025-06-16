@@ -3,8 +3,8 @@ const db = require('../db');
 
 class UserRepository {
   // ユーザーIDで取得
-  static getUserById(userId) {
-    return db.prepare('SELECT * FROM users WHERE user_id = ?').get(userId);
+  static findById(userId) {
+    return db.prepare('SELECT * FROM users WHERE user_id = ?').get(userId) || null;
   }
 
   // 認証用（ユーザー名とメールアドレスで検索）
@@ -15,13 +15,9 @@ class UserRepository {
 
   // ユーザー名で検索
   static findByUsername(username) {
-    return db.prepare('SELECT * FROM users WHERE user_name = ?').get(username);
+    return db.prepare('SELECT * FROM users WHERE user_name = ?').get(username) || null;
   }
 
-  // c:\Users\yusakata\work\github.com\xyslope\zaikon\repositories\UserRepository.js
-static findById(userId) {
-  return db.prepare('SELECT * FROM users WHERE user_id = ?').get(userId) || null;
-}
 
   // 新規ユーザー作成
   static createUser(userData) {
@@ -64,13 +60,18 @@ static findById(userId) {
       .all(`%${query}%`);
   }
 
-// ユーザー情報更新
-static updateUser(userData) {
-  const stmt = db.prepare(`
-    UPDATE users SET user_name = ?, user_description = ? WHERE user_id = ?
-  `);
-  return stmt.run(userData.user_name, userData.user_description, userData.user_id);
-}
+  // ユーザー情報更新
+  static updateUser(userData) {
+    const stmt = db.prepare(`
+      UPDATE users SET user_name = ?, user_description = ?, line_user_id = ? WHERE user_id = ?
+    `);
+    return stmt.run(userData.user_name, userData.user_description, userData.line_user_id, userData.user_id);
+  }
+
+  // ユーザー削除
+  static delete(userId) {
+    return db.prepare('DELETE FROM users WHERE user_id = ?').run(userId);
+  }
 
 }
 

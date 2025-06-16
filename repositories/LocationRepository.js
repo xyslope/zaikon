@@ -36,7 +36,20 @@ static findByUserId(userId) {
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(location_id, location_name, owner_id, created_by, created_at, updated_at);
   }
-  
+
+  // ロケーション削除
+  static delete(locationId) {
+    return db.prepare('DELETE FROM locations WHERE location_id = ?').run(locationId);
+  }
+
+  // ロケーション情報更新
+  static update(locationData) {
+    const stmt = db.prepare(`
+      UPDATE locations SET location_name = ?, updated_at = datetime('now')
+      WHERE location_id = ?
+    `);
+    return stmt.run(locationData.location_name, locationData.location_id);
+  }
 }
 
 module.exports = LocationRepository;

@@ -15,12 +15,18 @@
     <li>読み込み中...</li>
   </ul>
   <p>在庫からすぐに補充したほうがいいですよ</p>
+  <button id="sendReplenishToLine" class="line-btn" data-user-id="<%= userId %>">
+    <i class="fab fa-line"></i> 要補充リストをLINEで送信
+  </button>
 
   <h2>買い物リスト</h2>
   <ul id="shoppingList">
     <li>読み込み中...</li>
   </ul>
   <p>頼まれる前に買っておくとポイント高そう</p>
+  <button id="sendShoppingToLine" class="line-btn" data-user-id="<%= userId %>">
+    <i class="fab fa-line"></i> 買い物リストをLINEで送信
+  </button>
 
   <h2>あなたの場所一覧</h2>
   <div class="tile-container">
@@ -160,6 +166,63 @@ document.addEventListener('DOMContentLoaded', () => {
   const userId = '<%= userId %>';
   fetchAndRenderList(`/api/dashboard/${userId}/replenish`, 'replenishList');
   fetchAndRenderList(`/api/dashboard/${userId}/shopping`, 'shoppingList');
+
+  // LINE送信ボタンの処理
+  document.getElementById('sendReplenishToLine').addEventListener('click', async function() {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 送信中...';
+    
+    try {
+      const response = await fetch(`/api/dashboard/${userId}/line/replenish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('✅ ' + result.message);
+      } else {
+        alert('❌ ' + (result.error || 'エラーが発生しました'));
+      }
+    } catch (error) {
+      alert('❌ 通信エラーが発生しました');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  });
+
+  document.getElementById('sendShoppingToLine').addEventListener('click', async function() {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 送信中...';
+    
+    try {
+      const response = await fetch(`/api/dashboard/${userId}/line/shopping`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('✅ ' + result.message);
+      } else {
+        alert('❌ ' + (result.error || 'エラーが発生しました'));
+      }
+    } catch (error) {
+      alert('❌ 通信エラーが発生しました');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  });
 });
 </script>
 </body>

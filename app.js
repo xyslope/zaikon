@@ -12,6 +12,13 @@ const UserRepository = require('./repositories/UserRepository');
 const MemberRepository = require('./repositories/MemberRepository');
 const BanEmailRepository = require('./repositories/BanEmailRepository');
 
+// Controllers
+const UserController = require('./controllers/userController');
+const { LocationController, calculateStatus } = require('./controllers/locationController');
+const ItemController = require('./controllers/itemController');
+const LineController = require('./controllers/lineController');
+const LineSetupController = require('./controllers/lineSetupController');
+
 const app = express();
 const PORT = 3000;
 const nodemailer = require('nodemailer');
@@ -61,17 +68,6 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// ステータス計算関数（元の実装を保持）
-function calculateStatus(amount, yellow, green, purple) {
-  amount = Number(amount);
-  yellow = Number(yellow);
-  green = Number(green);
-  purple = Number(purple);
-  if (amount >= purple) return 'Purple';
-  if (amount >= green) return 'Green';
-  if (amount >= yellow) return 'Yellow';
-  return 'Red';
-}
 
 // 認証ミドルウェアを名前付き関数に切り出す
 function authMiddleware(req, res, next) {
@@ -127,195 +123,20 @@ app.get('/register', (req, res) => {
 });
 
 // GET: ユーザー編集ページ
-app.get('/user/:userId/edit', async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const user = await UserRepository.findById(userId);
-    if (!user) {
-      return res.status(404).send('ユーザが見つかりません');
-    }
-    res.render('user_edit', { user });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('ユーザ情報取得中にエラーが発生しました');
-  }
-});
+app.get('/user/:userId/edit', UserController.getUserEdit);
 
-app.post('/register', async (req, res) => {
-  const { user_name, email, user_description } = req.body;
-  if (!user_name || !email || !user_description) return res.redirect('/register');
-  console.log('ユーザを追加します')
-  try {
-    // Banリストにあるメールアドレスは登録拒否
-    const banned = BanEmailRepository.findByEmail(email);
-    if (banned) {
-      return res.send('<p>このメールアドレスは登録を禁止されています。<a href="/register">戻る</a></p>');
-    }
-    console.log('許可されているユーザです。')
-    try {
-      const existing = await UserRepository.findByEmail(email);
-      console.log('existing:', existing);
-      if (existing) {
-        return res.send('<p>同じメールアドレスが既に存在します。<a href="/register">戻る</a></p>');
-      }
-    } catch (err) {
-      console.error('findByUsernameOrEmail error:', err);
-      return res.status(500).send('ユーザー検索中にエラーが発生しました');
-    }
-        console.log('ほんとうにユーザを追加します。')
-
-    const newUser = {
-      user_id: 'usr_' + uuidv4().slice(0, 8),
-      user_name,
-      email,
-      user_description,
-      created_at: new Date().toISOString()
-    };
-    console.log('DBにユーザを追加します')
- 
-    await UserRepository.createUser(newUser);
-    req.session.user = newUser;
-    res.redirect(`/user/${newUser.user_id}`);
-  } catch (err) {
-    console.error('ユーザー登録中のエラー:', err);
-    res.status(500).send('ユーザー登録中にエラーが発生しました');
-  }
-});
+app.post('/register', UserController.postRegister);
 
 // ダッシュボード（SQLite対応版）
-app.get('/user/:userId', async (req, res) => {
-  const { userId } = req.params;
-
-  try {
-    // 自動ログイン処理
-    if (!req.session.user || req.session.user.user_id !== userId) {
-      const user = await UserRepository.findById(userId);
-      if (!user) {
-        return res.status(404).send(`<p>ユーザーが見つかりません。<a href="/">トップへ</a></p>`);
-      }
-      req.session.user = user;
-    }
-
-    const locations = await LocationRepository.findByUserId(userId);
-    // locationsごとにitems・members取得
-    for (const loc of locations) {
-      loc.items = await ItemRepository.findByLocationId(loc.location_id);
-      loc.members = await MemberRepository.findWithUserDetails(loc.location_id);
-    }
-    res.render('dashboard', {
-      userId,
-      locations,
-      sessionUser: req.session.user
-    });
-  } catch (err) {
-    res.status(500).send('データ取得中にエラーが発生しました');
-  }
-});
+app.get('/user/:userId', UserController.getUserDashboard);
 
 // POST: ユーザー情報更新
-app.post('/user/:userId/edit', async (req, res) => {
-  const sessionUser = req.session.user;
-  if (!sessionUser) return res.redirect('/login');
-
-  const { userId } = req.params;
-  if (sessionUser.user_id !== userId) return res.status(403).send('権限がありません');
-
-  const { user_name, user_description } = req.body;
-  if (!user_name || !user_description) return res.redirect(`/user/${userId}/edit`);
-
-  try {
-    await UserRepository.updateUser({
-      user_id: userId,
-      user_name,
-      user_description
-    });
-
-    // セッション情報更新
-    req.session.user.user_name = user_name;
-    req.session.user.user_description = user_description;
-
-    res.redirect(`/user/${userId}`);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('ユーザー情報更新中にエラーが発生しました');
-  }
-});
+app.post('/user/:userId/edit', UserController.postUserEdit);
 
 // 場所追加（SQLite対応版）
-app.post('/user/:userId/add-location', async (req, res) => {
-  const user = req.session.user;
-  if (!user) {
-    console.warn('セッション切れで場所追加拒否');
-    return res.status(401).send('セッションが切れています。再ログインしてください。');
-  }
+app.post('/user/:userId/add-location', LocationController.postAddLocation);
 
-  const { location_name } = req.body;
-  if (!location_name) return res.redirect(`/user/${user.user_id}`);
-
-  try {
-    const locationId = 'loc_' + uuidv4().slice(0, 8);
-    const now = new Date().toISOString();
-    console.log('場所を追加するよ')
-    await LocationRepository.create({
-      location_id: locationId,
-      location_name,
-      owner_id: user.user_id,      // ここを追加
-      created_by: user.user_id,
-      created_at: now
-    });
-    console.log('メンバーも追加するよ')
-
-    await MemberRepository.addMember({
-      user_id: user.user_id,
-      location_id: locationId,
-      joined_at: now
-    });
-    console.log('元に戻るよ')
-
-    res.redirect(`/user/${user.user_id}`);
-  } catch (err) {
-    console.error('場所追加時エラー:', err);
-    res.status(500).send('場所の追加中にエラーが発生しました');
-  }
-});
-
-app.get('/location/:locationId', (req, res) => {
-  const { locationId } = req.params;
-  const sessionUser = req.session.user;
-
-  try {
-    const location = LocationRepository.findById(locationId);
-    if (!location) {
-      return res.status(404).send('場所が見つかりません');
-    }
-
-    if (!sessionUser) {
-      return res.status(403).send('アクセス権がありません（未ログイン）');
-    }
-
-    const isMember = MemberRepository.findWithUserDetails(locationId)
-      .some(member => member.user_id === sessionUser.user_id);
-
-    if (!isMember) {
-      return res.status(403).send('アクセス権がありません');
-    }
-
-    const items = ItemRepository.findByLocationId(locationId);
-    const members = MemberRepository.findWithUserDetails(locationId);
-
-    res.render('location', {
-      locationId,
-      locationName: location.location_name,
-      items,
-      sessionUser,
-      members,
-      locationOwnerId: location.created_by,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('データ取得中にエラーが発生しました');
-  }
-});
+app.get('/location/:locationId', LocationController.getLocation);
 
 // アイテム追加（SQLite対応版）
 app.post('/location/:locationId/add', async (req, res) => {
@@ -399,7 +220,7 @@ app.post('/location/:locationId/update', async (req, res) => {
   const { item_id, new_amount } = req.body;
 
   try {
-    const item = await ItemRepository.findById(item_id);
+    const item = ItemRepository.findById(item_id);
     if (!item) {
       return res.redirect(`/location/${locationId}`);
     }
@@ -417,28 +238,7 @@ app.post('/location/:locationId/update', async (req, res) => {
 });
 
 // 場所削除（SQLite対応版）
-app.post('/location/:locationId/delete', async (req, res) => {
-  const { locationId } = req.params;
-  const user = req.session.user;
-  if (!user) return res.redirect('/login');
-
-  try {
-    const location = await LocationRepository.findById(locationId);
-    if (!location || location.created_by !== user.user_id) {
-      return res.status(403).send('権限がありません。');
-    }
-
-    await db.transaction()
-      .then(() => LocationRepository.delete(locationId))
-      .then(() => ItemRepository.deleteByLocationId(locationId))
-      .then(() => MemberRepository.deleteByLocationId(locationId))
-      .commit();
-
-    res.redirect(`/user/${user.user_id}`);
-  } catch (err) {
-    res.status(500).send('場所の削除中にエラーが発生しました');
-  }
-});
+app.post('/location/:locationId/delete', LocationController.postDeleteLocation);
 
 // アイテム削除（SQLite対応版）
 app.post('/location/:locationId/delete-item', async (req, res) => {
@@ -464,15 +264,16 @@ app.post('/location/:locationId/remove-member', async (req, res) => {
   if (!user) return res.redirect('/login');
 
   try {
-    await MemberRepository.removeMember(user_id, locationId);
+    MemberRepository.removeMember(user_id, locationId);
 
     // 残りメンバーがいない場合は場所も削除
-    const remaining = await MemberRepository.findByLocationId(locationId);
+    const remaining = MemberRepository.findByLocationId(locationId);
     if (remaining.length === 0) {
-      await db.transaction()
-        .then(() => LocationRepository.delete(locationId))
-        .then(() => ItemRepository.deleteByLocationId(locationId))
-        .commit();
+      const deleteTransaction = db.transaction(() => {
+        ItemRepository.deleteByLocationId(locationId);
+        LocationRepository.delete(locationId);
+      });
+      deleteTransaction();
 
       return res.redirect(`/user/${user.user_id}`);
     }
@@ -536,8 +337,9 @@ app.post('/send-user-link', async (req, res) => {
       return res.status(404).send('該当ユーザが見つかりません');
     }
 
-    const userPageUrl = `http://localhost:${PORT}/user/${user.user_id}`;
-    
+    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const userPageUrl = `${baseUrl}/user/${user.user_id}`;
+
     const mailOptions = {
       from: 'zaikon_at_ecofirm.com <zaikon_at_ecofirm.com>',
       to: email,
@@ -705,6 +507,17 @@ app.get('/api/dashboard/:userId/shopping', (req, res) => {
     res.status(500).json({ error: '買い物リスト取得中にエラーが発生しました' });
   }
 });
+
+// API: 要補充リストをLINEで送信
+app.post('/api/dashboard/:userId/line/replenish', LineController.sendReplenishList);
+
+// API: 買い物リストをLINEで送信
+app.post('/api/dashboard/:userId/line/shopping', LineController.sendShoppingList);
+
+// LINE連携用エンドポイント
+app.post('/api/line/generate-link/:userId', LineSetupController.generateLinkCode);
+app.get('/line-setup/:linkCode', LineSetupController.showLinkPage);
+app.post('/api/line/link-account', LineSetupController.linkUserAccount);
 
 // POST: 指定場所削除
 app.post(`/admin/${adminKey}/delete-location`, async (req, res) => {

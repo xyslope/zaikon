@@ -7,12 +7,14 @@
     "start": "node app.js",
     "migrate": "node repositories/migrateall.js",
     "dev": "nodemon app.js",
-    "test": "jest"
+    "test": "jest",
+    "testcover": "jest --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@line/bot-sdk": "^10.0.0",
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.5.0",
     "ejs": "^3.1.10",

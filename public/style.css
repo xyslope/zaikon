@@ -146,6 +146,43 @@
   text-decoration: underline;
 }
 
+/* LINE送信ボタンのスタイル */
+.line-btn {
+  background: linear-gradient(135deg, #00C300, #00B300);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 10px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 195, 0, 0.3);
+}
+
+.line-btn:hover {
+  background: linear-gradient(135deg, #00B300, #00A300);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 195, 0, 0.4);
+}
+
+.line-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.line-btn:disabled:hover {
+  background: #cccccc;
+  transform: none;
+  box-shadow: none;
+}
+
 .icon-button {
   background: none;
   border: none;

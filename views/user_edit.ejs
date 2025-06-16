@@ -13,8 +13,55 @@
     <label>説明・プロフィール:<br>
       <textarea name="user_description" rows="4" cols="40" required><%= user.user_description %></textarea>
     </label><br>
+    <label>LINE通知設定:<br>
+      <input type="text" name="line_user_id" value="<%= user.line_user_id || '' %>" placeholder="LINEユーザーID（例: U1234567890abcdef1234567890abcdef）" readonly>
+      <br><small style="color: #666;">
+        <% if (user.line_user_id) { %>
+          ✅ LINE連携済み
+        <% } else { %>
+          ⚠️ LINE連携が必要です
+        <% } %>
+      </small>
+      <br>
+      <button type="button" id="setupLineBtn" style="background: #00C300; color: white; padding: 8px 16px; border: none; border-radius: 20px; margin-top: 5px;">
+        🔗 LINE連携を設定
+      </button>
+    </label><br>
     <button type="submit">保存</button>
   </form>
   <p><a href="/user/<%= user.user_id %>">← ダッシュボードに戻る</a></p>
+
+  <script>
+    document.getElementById('setupLineBtn').addEventListener('click', async function() {
+      const btn = this;
+      const originalText = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = '🔄 リンク生成中...';
+      
+      try {
+        const response = await fetch(`/api/line/generate-link/<%= user.user_id %>`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          // 新しいウィンドウでLINE連携ページを開く
+          window.open(result.linkUrl, '_blank', 'width=600,height=700');
+          
+          alert(`📱 LINE連携用のページを開きました。\n\n手順:\n1. Zaikon Botを友だち追加\n2. リンクコード「${result.linkCode}」を送信\n3. このページを再読み込み`);
+        } else {
+          alert('❌ ' + (result.error || 'エラーが発生しました'));
+        }
+      } catch (error) {
+        alert('❌ 通信エラーが発生しました');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+  </script>
 </body>
 </html>

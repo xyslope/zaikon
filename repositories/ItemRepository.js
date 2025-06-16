@@ -58,6 +58,21 @@ class ItemRepository {
     return db.prepare('SELECT * FROM items WHERE location_id = ?').all(locationId) || [];
   }
 
+  // アイテムIDで取得
+  static findById(itemId) {
+    return db.prepare('SELECT * FROM items WHERE item_id = ?').get(itemId) || null;
+  }
+
+  // アイテム削除
+  static delete(itemId) {
+    return db.prepare('DELETE FROM items WHERE item_id = ?').run(itemId);
+  }
+
+  // ロケーション別アイテム一括削除
+  static deleteByLocationId(locationId) {
+    return db.prepare('DELETE FROM items WHERE location_id = ?').run(locationId);
+  }
+
   // inuseとamountの同時更新
   static updateInuseAndAmount(itemId, newInuse, newAmount) {
     return db.prepare(`
