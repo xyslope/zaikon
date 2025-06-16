@@ -63,6 +63,53 @@ app.use(session({
   }
 }));
 
+// LINE Webhook（JSONパーサーより前に配置）
+const lineConfig = {
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_CHANNEL_SECRET,
+};
+
+if (lineConfig.channelAccessToken && lineConfig.channelSecret) {
+  const { Client, middleware } = require('@line/bot-sdk');
+  const client = new Client(lineConfig);
+  
+  app.post('/webhook', middleware(lineConfig), (req, res) => {
+    Promise.all(req.body.events.map(handleLineEvent))
+      .then((result) => res.json(result))
+      .catch((err) => {
+        console.error('LINE Webhook error:', err);
+        res.status(500).end();
+      });
+  });
+
+  function handleLineEvent(event) {
+    if (event.type === 'message' && event.message.type === 'text') {
+      const linkCode = event.message.text.trim();
+      const lineUserId = event.source.userId;
+      
+      console.log(`LINE Bot: リンクコード受信 ${linkCode} from ${lineUserId}`);
+      
+      // 直接LineSetupControllerを呼び出し
+      const result = LineSetupController.linkUserAccount({
+        body: { linkCode, lineUserId }
+      }, {
+        json: (data) => data,
+        status: () => ({ json: (data) => data })
+      });
+      
+      const message = result.success 
+        ? `✅ ${result.userName}さんのLINE連携完了！\n\n要補充リストなどの通知を受け取れるようになりました。`
+        : `❌ リンクコード「${linkCode}」が見つかりません。\n\n正しいコードかご確認ください。`;
+        
+      return client.replyMessage(event.replyToken, {
+        type: 'text',
+        text: message
+      });
+    }
+    return Promise.resolve(null);
+  }
+}
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
@@ -522,62 +569,6 @@ app.post('/api/line/generate-link/:userId', LineSetupController.generateLinkCode
 app.get('/line-setup/:linkCode', LineSetupController.showLinkPage);
 app.post('/api/line/link-account', LineSetupController.linkUserAccount);
 
-// LINE Bot Webhook
-const lineConfig = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
-  channelSecret: process.env.LINE_CHANNEL_SECRET,
-};
-
-if (lineConfig.channelAccessToken && lineConfig.channelSecret) {
-  const client = new Client(lineConfig);
-  
-  app.post('/webhook', middleware(lineConfig), (req, res) => {
-    Promise.all(req.body.events.map(handleLineEvent))
-      .then((result) => res.json(result))
-      .catch((err) => {
-        console.error('LINE Webhook error:', err);
-        res.status(500).end();
-      });
-  });
-
-  function handleLineEvent(event) {
-    if (event.type === 'message' && event.message.type === 'text') {
-      const linkCode = event.message.text.trim();
-      const lineUserId = event.source.userId;
-      
-      console.log(`LINE Bot: リンクコード受信 ${linkCode} from ${lineUserId}`);
-      
-      // LINE連携処理
-      return fetch(`http://localhost:${PORT}/api/line/link-account`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ linkCode, lineUserId })
-      })
-      .then(res => res.json())
-      .then(result => {
-        const message = result.success 
-          ? `✅ ${result.userName}さんのLINE連携完了！\n\n要補充リストなどの通知を受け取れるようになりました。`
-          : `❌ リンクコード「${linkCode}」が見つかりません。\n\n正しいコードかご確認ください。`;
-          
-        return client.replyMessage(event.replyToken, {
-          type: 'text',
-          text: message
-        });
-      })
-      .catch(err => {
-        console.error('Link account error:', err);
-        return client.replyMessage(event.replyToken, {
-          type: 'text',
-          text: '❌ 連携処理でエラーが発生しました。しばらく待ってから再度お試しください。'
-        });
-      });
-    }
-    
-    return Promise.resolve(null);
-  }
-} else {
-  console.warn('⚠️ LINE設定が不完全です。Webhook機能は無効化されています。');
-}
 
 // POST: 指定場所削除
 app.post(`/admin/${adminKey}/delete-location`, async (req, res) => {
