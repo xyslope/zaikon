@@ -78,6 +78,8 @@ function authMiddleware(req, res, next) {
     /^\/register/,
     /^\/send-user-link$/,
     /^\/send-admin-link$/,
+    /^\/webhook$/,
+    /^\/line-setup\/[\w-]+$/,
     new RegExp(`^\\/admin\\/${adminKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)
   ];
   console.log(req.path);
