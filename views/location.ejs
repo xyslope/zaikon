@@ -118,6 +118,26 @@
     </form>
   </div>
 </div>
+
+<!-- アイテム移動ポップアップ -->
+<div id="moveItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:8px; width:90%; max-width:400px;">
+    <h3>アイテム移動</h3>
+    <div style="margin-bottom:15px;">
+      <strong>アイテム名:</strong> <span id="moveItemName"></span>
+    </div>
+    <div style="margin-bottom:15px;">
+      <label>移動先を選択:</label>
+      <div id="locationList" style="margin-top:10px;">
+        <!-- 動的に生成される -->
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <button type="button" onclick="closeMoveModal()" style="margin-right:10px;">キャンセル</button>
+      <button type="button" id="executeMoveBtn" onclick="executeMoveItem()" disabled>移動実行</button>
+    </div>
+  </div>
+</div>
 <script>
 function openAmountEdit(locationId, itemId, current) {
   const newVal = prompt('新しい在庫数を入力してください', current);
@@ -162,6 +182,95 @@ async function openItemEdit(locationId, itemId) {
 
 function closeEditModal() {
   document.getElementById('editItemModal').style.display = 'none';
+}
+
+let currentMoveItemId = null;
+
+async function openItemMoveModal(itemId, itemName) {
+  try {
+    currentMoveItemId = itemId;
+    document.getElementById('moveItemName').textContent = itemName;
+    
+    // 利用可能なロケーション一覧を取得
+    const response = await fetch(`/api/item/${itemId}/locations`);
+    if (!response.ok) {
+      alert('ロケーション一覧の取得に失敗しました');
+      return;
+    }
+    
+    const locations = await response.json();
+    const locationList = document.getElementById('locationList');
+    
+    if (locations.length === 0) {
+      locationList.innerHTML = '<p style="color:#666;">移動可能な場所がありません</p>';
+      document.getElementById('executeMoveBtn').disabled = true;
+    } else {
+      locationList.innerHTML = '';
+      locations.forEach((location, index) => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '8px';
+        
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'targetLocation';
+        radio.value = location.location_id;
+        radio.id = `location_${index}`;
+        radio.addEventListener('change', () => {
+          document.getElementById('executeMoveBtn').disabled = false;
+        });
+        
+        const label = document.createElement('label');
+        label.htmlFor = `location_${index}`;
+        label.textContent = location.location_name;
+        label.style.marginLeft = '8px';
+        label.style.cursor = 'pointer';
+        
+        div.appendChild(radio);
+        div.appendChild(label);
+        locationList.appendChild(div);
+      });
+      document.getElementById('executeMoveBtn').disabled = true;
+    }
+    
+    document.getElementById('moveItemModal').style.display = 'block';
+  } catch (err) {
+    alert('エラーが発生しました');
+  }
+}
+
+function closeMoveModal() {
+  document.getElementById('moveItemModal').style.display = 'none';
+  currentMoveItemId = null;
+}
+
+async function executeMoveItem() {
+  if (!currentMoveItemId) return;
+  
+  const selectedRadio = document.querySelector('input[name="targetLocation"]:checked');
+  if (!selectedRadio) {
+    alert('移動先を選択してください');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/item/${currentMoveItemId}/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newLocationId: selectedRadio.value })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      alert(result.message);
+      closeMoveModal();
+      location.reload();
+    } else {
+      alert(result.error || 'アイテム移動に失敗しました');
+    }
+  } catch (err) {
+    alert('通信エラーが発生しました');
+  }
 }
 document.body.addEventListener('click', e => {
   // 既存の±ボタン判定はそのまま利用

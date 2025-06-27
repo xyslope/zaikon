@@ -607,4 +607,10 @@ app.get('/api/users', (req, res) => {
   }
 });
 
+// API: アイテム移動用のロケーション一覧取得
+app.get('/api/item/:itemId/locations', ItemController.getAvailableLocations);
+
+// API: アイテム移動実行
+app.post('/api/item/:itemId/move', ItemController.postMoveItem);
+
 module.exports = app;

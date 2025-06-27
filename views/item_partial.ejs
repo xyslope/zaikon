@@ -20,3 +20,7 @@
    onclick="event.stopPropagation(); return openAmountEdit('<%= locationId %>', '<%= item.item_id %>', <%= item.amount %>)"></i>
 <button type="button" class="amount-btn decrement-btn" data-location-id="<%= locationId %>" data-item-id="<%= item.item_id %>" <% if (item.amount == 0) { %> disabled <% } %> >−</button>
 <button type="button" class="amount-btn increment-btn" data-location-id="<%= locationId %>" data-item-id="<%= item.item_id %>">＋</button>
+<i class="fa-solid fa-arrow-right" 
+   style="margin-left:8px; cursor:pointer; color:#007bff;" 
+   title="他の場所に移動" 
+   onclick="event.stopPropagation(); openItemMoveModal('<%= item.item_id %>', '<%= item.item_name %>')"></i>

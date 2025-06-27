@@ -1,5 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const ItemRepository = require('../repositories/ItemRepository');
+const LocationRepository = require('../repositories/LocationRepository');
+const MemberRepository = require('../repositories/MemberRepository');
 
 function calculateStatus(amount, yellow, green, purple) {
   amount = Number(amount);
@@ -183,7 +185,60 @@ class ItemController {
       console.error(err);
       res.status(500).send('アイテム編集中にエラーが発生しました');
     }
-  }}
+  }
+
+  // アイテム移動用のロケーション一覧取得
+  static async getAvailableLocations(req, res) {
+    const { itemId } = req.params;
+    const userId = req.session.user.user_id;
+
+    try {
+      const item = ItemRepository.findById(itemId);
+      if (!item) {
+        return res.status(404).json({ error: 'アイテムが見つかりません' });
+      }
+
+      // ユーザーがメンバーであるロケーション一覧を取得
+      const userLocations = LocationRepository.findByUserId(userId);
+      
+      // 現在のロケーション以外を返す
+      const availableLocations = userLocations.filter(loc => loc.location_id !== item.location_id);
+      
+      res.json(availableLocations);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'ロケーション取得中にエラーが発生しました' });
+    }
+  }
+
+  // アイテム移動実行
+  static async postMoveItem(req, res) {
+    const { itemId } = req.params;
+    const { newLocationId } = req.body;
+    const userId = req.session.user.user_id;
+
+    try {
+      const item = ItemRepository.findById(itemId);
+      if (!item) {
+        return res.status(404).json({ error: 'アイテムが見つかりません' });
+      }
+
+      // 移動先ロケーションでユーザーがメンバーかチェック
+      const isMember = MemberRepository.isMember(userId, newLocationId);
+      if (!isMember) {
+        return res.status(403).json({ error: '移動先のロケーションにアクセス権限がありません' });
+      }
+
+      // アイテム移動実行
+      ItemRepository.moveItem(itemId, newLocationId);
+      
+      res.json({ success: true, message: 'アイテムを移動しました' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'アイテム移動中にエラーが発生しました' });
+    }
+  }
+}
 
 module.exports = ItemController;
 module.exports.calculateStatus = calculateStatus;

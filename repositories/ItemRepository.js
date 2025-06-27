@@ -123,6 +123,16 @@ class ItemRepository {
       params.push(status);
     }
     return db.prepare(query).all(...params);
-  }}
+  }
+
+  // アイテムのロケーション移動
+  static moveItem(itemId, newLocationId) {
+    return db.prepare(`
+      UPDATE items 
+      SET location_id = ?, updated_at = datetime('now')
+      WHERE item_id = ?
+    `).run(newLocationId, itemId);
+  }
+}
 
 module.exports = ItemRepository;
