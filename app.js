@@ -290,6 +290,12 @@ app.post('/location/:locationId/update', async (req, res) => {
 // 場所削除（SQLite対応版）
 app.post('/location/:locationId/delete', LocationController.postDeleteLocation);
 
+// アイテム編集API（JSON）
+app.get('/api/item/:itemId', ItemController.getItemEdit);
+
+// アイテム編集
+app.post('/location/:locationId/item/:itemId/edit', ItemController.postEditItem);
+
 // アイテム削除（SQLite対応版）
 app.post('/location/:locationId/delete-item', async (req, res) => {
   const { locationId } = req.params;
@@ -297,8 +303,7 @@ app.post('/location/:locationId/delete-item', async (req, res) => {
 
   if (!item_id) return res.redirect(`/location/${locationId}`);
 
-  try {
-    await ItemRepository.delete(item_id);
+  try {    await ItemRepository.delete(item_id);
     res.redirect(`/location/${locationId}`);
   } catch (err) {
     res.status(500).send('アイテム削除中にエラーが発生しました');

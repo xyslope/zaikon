@@ -10,7 +10,7 @@
    else basketColorClass = 'color-red';
 %>
 
-<%= item.item_name %>
+<span class="item-name" onclick="openItemEdit('<%= locationId %>', '<%= item.item_id %>')" style="cursor:pointer; text-decoration:underline;"><%= item.item_name %></span>
   <button type="button" class="inuse-btn" data-location-id="<%= locationId %>" data-item-id="<%= item.item_id %>" data-current-inuse="<%= item.inuse %>" data-amount="<%= item.amount %>" style="background:none; border:none; padding:0 2px; cursor:pointer;" <% if (item.inuse == 2 && item.amount == 0) { %>disabled<% } %>>
     <img src="/images/<%= ['bottle_full.png', 'bottle_half.png', 'bottle_empty.png'][item.inuse] %>" alt="在庫状態" style="width:2em; height:auto; vertical-align: middle;">
   </button>

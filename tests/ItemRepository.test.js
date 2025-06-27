@@ -116,6 +116,60 @@ describe('ItemRepository', () => {
     expect(runMock).toHaveBeenCalledWith(2, 'itm_1');
   });
 
+  test('updateItem executes full item update', () => {
+    const runMock = jest.fn();
+    mockDb.prepare.mockReturnValue({ run: runMock });
+
+    const itemData = {
+      item_name: 'Updated Item',
+      yellow: 2,
+      green: 5,
+      purple: 10,
+      amount: 8,
+      status: 'Green'
+    };
+
+    ItemRepository.updateItem('itm_1', itemData);
+
+    expect(mockDb.prepare).toHaveBeenCalled();
+    expect(runMock).toHaveBeenCalledWith(
+      itemData.item_name,
+      itemData.yellow,
+      itemData.green,
+      itemData.purple,
+      itemData.amount,
+      itemData.status,
+      'itm_1'
+    );
+  });
+
+  test('findById returns item or null', () => {
+    const mockItem = { item_id: 'itm_1', item_name: 'Test Item' };
+    mockDb.prepare.mockReturnValue({
+      get: jest.fn().mockReturnValue(mockItem)
+    });
+
+    const result = ItemRepository.findById('itm_1');
+    expect(result).toEqual(mockItem);
+
+    // test null case
+    mockDb.prepare.mockReturnValue({
+      get: jest.fn().mockReturnValue(undefined)
+    });
+    const resultNull = ItemRepository.findById('nonexistent');
+    expect(resultNull).toBeNull();
+  });
+
+  test('delete executes delete statement', () => {
+    const runMock = jest.fn();
+    mockDb.prepare.mockReturnValue({ run: runMock });
+
+    ItemRepository.delete('itm_1');
+
+    expect(mockDb.prepare).toHaveBeenCalled();
+    expect(runMock).toHaveBeenCalledWith('itm_1');
+  });
+
   test('findItemsByUserWithConditions builds query correctly', () => {
     const mockItems = [{ item_id: 'itm_1' }];
     const allMock = jest.fn().mockReturnValue(mockItems);

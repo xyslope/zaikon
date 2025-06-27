@@ -84,7 +84,40 @@
     
   </div>
 
-  <p><a href="/user/<%= sessionUser.user_id %>">← ダッシュボードへ戻る</a></p>
+  <p><a href=\"/user/<%= sessionUser.user_id %>\">← ダッシュボードへ戻る</a></p>
+
+<!-- アイテム編集ポップアップ -->
+<div id="editItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:8px; width:90%; max-width:400px;">
+    <h3>アイテム編集</h3>
+    <form id="editItemForm" method="POST">
+      <div style="margin-bottom:10px;">
+        <label>アイテム名:</label>
+        <input type="text" id="editItemName" name="item_name" required style="width:100%; padding:5px;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label>在庫数:</label>
+        <input type="number" id="editAmount" name="amount" required style="width:100%; padding:5px;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label><i class="fa-solid fa-circle-exclamation red"></i> Yellow閾値:</label>
+        <input type="number" id="editYellow" name="yellow" required style="width:100%; padding:5px;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label><i class="fa-solid fa-thumbs-up yellow"></i> Green閾値:</label>
+        <input type="number" id="editGreen" name="green" required style="width:100%; padding:5px;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label><i class="fa-solid fa-face-grin-tongue-wink purple"></i> Purple閾値:</label>
+        <input type="number" id="editPurple" name="purple" required style="width:100%; padding:5px;">
+      </div>
+      <div style="text-align:right;">
+        <button type="button" onclick="closeEditModal()" style="margin-right:10px;">キャンセル</button>
+        <button type="submit">更新</button>
+      </div>
+    </form>
+  </div>
+</div>
 <script>
 function openAmountEdit(locationId, itemId, current) {
   const newVal = prompt('新しい在庫数を入力してください', current);
@@ -99,11 +132,37 @@ function openAmountEdit(locationId, itemId, current) {
   f.method = 'POST';
   f.action = `/location/${locationId}/item/${itemId}/amount`;
   f.style.display = 'none';
-  f.innerHTML = `<input name="action" value="set"><input name="value" value="${val}">`;
+  f.innerHTML = `<input name=\"action\" value=\"set\"><input name=\"value\" value=\"${val}\">`;
   document.body.appendChild(f);
   f.submit();
   return false;
 };
+
+async function openItemEdit(locationId, itemId) {
+  try {
+    const response = await fetch(`/api/item/${itemId}`);
+    if (!response.ok) {
+      alert('アイテム情報の取得に失敗しました');
+      return;
+    }
+    const item = await response.json();
+    
+    document.getElementById('editItemName').value = item.item_name;
+    document.getElementById('editAmount').value = item.amount;
+    document.getElementById('editYellow').value = item.yellow;
+    document.getElementById('editGreen').value = item.green;
+    document.getElementById('editPurple').value = item.purple;
+    
+    document.getElementById('editItemForm').action = `/location/${locationId}/item/${itemId}/edit`;
+    document.getElementById('editItemModal').style.display = 'block';
+  } catch (err) {
+    alert('エラーが発生しました');
+  }
+}
+
+function closeEditModal() {
+  document.getElementById('editItemModal').style.display = 'none';
+}
 document.body.addEventListener('click', e => {
   // 既存の±ボタン判定はそのまま利用
 

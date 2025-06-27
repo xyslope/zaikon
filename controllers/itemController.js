@@ -141,6 +141,49 @@ class ItemController {
       res.status(500).json({ error: '買い物リスト取得中にエラーが発生しました' });
     }
   }
-}
+
+  static getItemEdit(req, res) {
+    const { itemId } = req.params;
+    try {
+      const item = ItemRepository.findById(itemId);
+      if (!item) {
+        return res.status(404).json({ error: 'アイテムが見つかりません' });
+      }
+      res.json(item);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'アイテム取得中にエラーが発生しました' });
+    }
+  }
+
+  static postEditItem(req, res) {
+    const { locationId, itemId } = req.params;
+    const { item_name, yellow, green, purple, amount } = req.body;
+
+    try {
+      const yellowVal = parseInt(yellow, 10);
+      const greenVal = parseInt(green, 10);
+      const purpleVal = parseInt(purple, 10);
+      const amountVal = parseInt(amount, 10);
+      
+      const status = calculateStatus(amountVal, yellowVal, greenVal, purpleVal);
+      
+      const itemData = {
+        item_name,
+        yellow: yellowVal,
+        green: greenVal,
+        purple: purpleVal,
+        amount: amountVal,
+        status
+      };
+
+      ItemRepository.updateItem(itemId, itemData);
+      res.redirect(`/location/${locationId}`);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('アイテム編集中にエラーが発生しました');
+    }
+  }}
 
 module.exports = ItemController;
+module.exports.calculateStatus = calculateStatus;

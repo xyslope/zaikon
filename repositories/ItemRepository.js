@@ -91,6 +91,19 @@ class ItemRepository {
     `).run(newInuse, itemId);
   }
   
+  // アイテム完全更新
+  static updateItem(itemId, itemData) {
+    const {
+      item_name, yellow, green, purple, amount, status
+    } = itemData;
+    return db.prepare(`
+      UPDATE items 
+      SET item_name = ?, yellow = ?, green = ?, purple = ?, 
+          amount = ?, status = ?, updated_at = datetime('now')
+      WHERE item_id = ?
+    `).run(item_name, yellow, green, purple, amount, status, itemId);
+  }
+
   // ユーザIDでアイテム抽出（任意のinuse・status条件を渡せる）
   static findItemsByUserWithConditions(userId, inuse = null, status = null) {
     let query = `
@@ -110,7 +123,6 @@ class ItemRepository {
       params.push(status);
     }
     return db.prepare(query).all(...params);
-  }
-}
+  }}
 
 module.exports = ItemRepository;
