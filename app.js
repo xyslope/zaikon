@@ -420,7 +420,8 @@ app.post('/send-admin-link', async (req, res) => {
   }
 
   try {
-    const adminPageUrl = `http://localhost:${PORT}/admin/${adminKey}`;
+    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const adminPageUrl = `${baseUrl}/admin/${adminKey}`;
 
     const mailOptions = {
       from: 'zaikon_at_ecofirm.com <zaikon@ecofirm.com>',
