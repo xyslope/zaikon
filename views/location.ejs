@@ -273,7 +273,36 @@ async function executeMoveItem() {
   }
 }
 document.body.addEventListener('click', e => {
-  // 既存の±ボタン判定はそのまま利用
+  // ±ボタン用
+  if (e.target.matches('.decrement-btn') && !e.target.disabled) {
+    const btn = e.target;
+    const locationId = btn.getAttribute('data-location-id');
+    const itemId = btn.getAttribute('data-item-id');
+    fetch(`/location/${locationId}/item/${itemId}/amount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'action=decrement'
+    }).then(res => {
+      if (res.ok) location.reload();
+      else alert('在庫数の更新に失敗しました');
+    });
+    return;
+  }
+
+  if (e.target.matches('.increment-btn')) {
+    const btn = e.target;
+    const locationId = btn.getAttribute('data-location-id');
+    const itemId = btn.getAttribute('data-item-id');
+    fetch(`/location/${locationId}/item/${itemId}/amount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'action=increment'
+    }).then(res => {
+      if (res.ok) location.reload();
+      else alert('在庫数の更新に失敗しました');
+    });
+    return;
+  }
 
   // inuseボタン判定・AJAX処理
   const inuseBtn = e.target.closest('.inuse-btn');
