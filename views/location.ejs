@@ -8,41 +8,86 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>場所: <%= locationName %></h1>
-  <div class="location-actions">
-    <a href="#" class="edit-link"><i class="fas fa-pen"></i></a>
-    <% if (sessionUser && locationOwnerId === sessionUser.user_id) { %>
-    <form action="/location/<%= locationId %>/delete" method="POST" onsubmit="return confirm('本当にこの場所を削除しますか？');">
-      <button type="submit" class="icon-button" title="場所を削除">
-        <i class="fas fa-trash"></i>
-      </button>
-    </form>
-    <% } %>
+  <div class="main-header">
+    <h1>
+      <i class="fas fa-map-marker-alt text-primary"></i>
+      <%= locationName %>
+    </h1>
   </div>
-
-<h3>ユーザ：<%= sessionUser.user_name %></h3>
-<h3>この場所のメンバー</h3>
-  <div class="location-actions">
-  <% members.forEach(m => { %>
-      <%= m.user_name %>
-      <% if (sessionUser && sessionUser.user_id !== m.user_id) { %>
-        <!-- 自分以外を削除可能 -->
-        <form action="/location/<%= locationId %>/remove-member" method="POST" style="display:inline">
-          <input type="hidden" name="user_id" value="<%= m.user_id %>">
-          <button type="submit" onclick="return confirm('このメンバーを削除しますか？')"><i class="fas fa-scissors"></i></button>
-        </form>
-      <% } %>
-      ｜
-  <% }) %>
-  <form action="/add-member" method="POST">
-    <input type="hidden" name="location_id" value="<%= locationId %>">
-    <div id="user-suggestions" style="position: relative;">
-      <input type="text" id="userNameInput" name="user_name" placeholder="ユーザー名" autocomplete="off" required>
-      <div id="suggestions-list" style="position: absolute; background: white; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; width: 100%; z-index: 1000;"></div>
+  
+  <div class="container">
+    <!-- 場所管理セクション -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-cog text-secondary"></i>
+          場所管理
+        </h2>
+        <div class="flex gap-2">
+          <button class="icon-button" title="場所を編集">
+            <i class="fas fa-pen"></i>
+          </button>
+          <% if (sessionUser && locationOwnerId === sessionUser.user_id) { %>
+          <form action="/location/<%= locationId %>/delete" method="POST" onsubmit="return confirm('本当にこの場所を削除しますか？');" style="display: inline;">
+            <button type="submit" class="icon-button danger" title="場所を削除">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+          <% } %>
+        </div>
+      </div>
+      
+      <div class="mb-4">
+        <p class="text-secondary">
+          <i class="fas fa-user text-info"></i>
+          現在のユーザー: <strong><%= sessionUser.user_name %></strong>
+        </p>
+      </div>
     </div>
-    <button type="submit"><i class="fas fa-plus"></i></button>
-  </form>
-  </div>
+
+    <!-- メンバー管理セクション -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-users text-info"></i>
+          この場所のメンバー
+        </h2>
+      </div>
+      
+      <div class="tile-container mb-4">
+        <% members.forEach(m => { %>
+        <div class="tile">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-user-circle text-primary"></i>
+              <span class="font-medium"><%= m.user_name %></span>
+            </div>
+            <% if (sessionUser && sessionUser.user_id !== m.user_id) { %>
+            <form action="/location/<%= locationId %>/remove-member" method="POST" style="display:inline">
+              <input type="hidden" name="user_id" value="<%= m.user_id %>">
+              <button type="submit" class="icon-button danger" onclick="return confirm('このメンバーを削除しますか？')" title="メンバーを削除">
+                <i class="fas fa-user-minus"></i>
+              </button>
+            </form>
+            <% } %>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      
+      <div class="form-box">
+        <form action="/add-member" method="POST" class="form-row">
+          <input type="hidden" name="location_id" value="<%= locationId %>">
+          <div class="form-group" style="flex: 1; position: relative;">
+            <input type="text" id="userNameInput" name="user_name" placeholder="ユーザー名を入力" autocomplete="off" required>
+            <div id="suggestions-list" style="position: absolute; background: white; border: 1px solid var(--border-color); border-radius: var(--radius); max-height: 150px; overflow-y: auto; width: 100%; z-index: 1000; box-shadow: var(--shadow);"></div>
+          </div>
+          <button type="submit" class="btn-success">
+            <i class="fas fa-user-plus"></i> メンバー追加
+          </button>
+        </form>
+      </div>
+    </div>
 
 
 
@@ -57,63 +102,103 @@
     </div>
     <% }) %>
 
-    <div class="tile">
-      <h3>アイテム追加</h3>
-      <form action="/location/<%= locationId %>/add" method="POST">
-	<input type="text" name="item_name" placeholder="アイテム名" required>
-	<input type="number" name="amount" placeholder="在庫数" required>
-	<div class="label-icon-input">
-	  <i class="fa-solid fa-circle-exclamation red"></i>
-	  <input type="number" name="yellow" placeholder="Yellow閾値" value="1" required>
-	  <i class="red"> ＜ 補充</i>
-	</div>
-	<div class="label-icon-input">
-	  <i class="fa-solid fa-thumbs-up yellow"></i>
-	  <input type="number" name="green" placeholder="Green閾値" value="3" required>
-	  <i class="yellow">＜ 要注意</i>
-	</div>
-	<div class="label-icon-input">
-	  <i class="fa-solid fa-face-grin-tongue-wink purple"></i>
-	  <input type="number" name="purple" placeholder="Purple閾値" value="6" required>
-	  <i class="purple"> ＞ 在庫過多</i>
-	</div>
-  <button type="submit">追加</button>
-
-      </form>
+    </div>
+    
+    <!-- アイテム追加セクション -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-plus-circle text-success"></i>
+          新しいアイテムを追加
+        </h2>
+      </div>
+      
+      <div class="form-box">
+        <form action="/location/<%= locationId %>/add" method="POST">
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label>アイテム名</label>
+              <input type="text" name="item_name" placeholder="例: 洗剤、シャンプー" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>現在の在庫数</label>
+              <input type="number" name="amount" placeholder="0" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="mb-2">ステータス閾値設定</label>
+            <div class="label-icon-input">
+              <i class="fa-solid fa-circle-exclamation red"></i>
+              <input type="number" name="yellow" placeholder="1" value="1" required>
+              <span class="suffix-text red">以下で補充が必要</span>
+            </div>
+            <div class="label-icon-input">
+              <i class="fa-solid fa-thumbs-up yellow"></i>
+              <input type="number" name="green" placeholder="3" value="3" required>
+              <span class="suffix-text yellow">以下で要注意</span>
+            </div>
+            <div class="label-icon-input">
+              <i class="fa-solid fa-face-grin-tongue-wink purple"></i>
+              <input type="number" name="purple" placeholder="6" value="6" required>
+              <span class="suffix-text purple">以上で在庫過多</span>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-success">
+            <i class="fas fa-plus"></i> アイテムを追加
+          </button>
+        </form>
+      </div>
     </div>
     
   </div>
 
-  <p><a href=\"/user/<%= sessionUser.user_id %>\">← ダッシュボードへ戻る</a></p>
+    <!-- ナビゲーション -->
+    <div class="section">
+      <div class="flex items-center justify-between">
+        <a href="/user/<%= sessionUser.user_id %>" class="btn btn-outline">
+          <i class="fas fa-arrow-left"></i> ダッシュボードへ戻る
+        </a>
+      </div>
+    </div>
+  </div> <!-- /container -->
 
 <!-- アイテム編集ポップアップ -->
 <div id="editItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
-  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:8px; width:90%; max-width:400px;">
-    <h3>アイテム編集</h3>
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--bg-primary); padding:1.5rem; border-radius:var(--radius-md); width:90%; max-width:400px; box-shadow:var(--shadow-lg);">
+    <h3 class="section-title mb-4">
+      <i class="fas fa-edit text-primary"></i>
+      アイテム編集
+    </h3>
     <form id="editItemForm" method="POST">
-      <div style="margin-bottom:10px;">
-        <label>アイテム名:</label>
-        <input type="text" id="editItemName" name="item_name" required style="width:100%; padding:5px;">
+      <div class="form-group">
+        <label>アイテム名</label>
+        <input type="text" id="editItemName" name="item_name" required>
       </div>
-      <div style="margin-bottom:10px;">
-        <label>在庫数:</label>
-        <input type="number" id="editAmount" name="amount" required style="width:100%; padding:5px;">
+      <div class="form-group">
+        <label>在庫数</label>
+        <input type="number" id="editAmount" name="amount" required>
       </div>
-      <div style="margin-bottom:10px;">
-        <label><i class="fa-solid fa-circle-exclamation red"></i> Yellow閾値:</label>
-        <input type="number" id="editYellow" name="yellow" required style="width:100%; padding:5px;">
+      <div class="form-group">
+        <label><i class="fa-solid fa-circle-exclamation red"></i> Yellow閾値</label>
+        <input type="number" id="editYellow" name="yellow" required>
       </div>
-      <div style="margin-bottom:10px;">
-        <label><i class="fa-solid fa-thumbs-up yellow"></i> Green閾値:</label>
-        <input type="number" id="editGreen" name="green" required style="width:100%; padding:5px;">
+      <div class="form-group">
+        <label><i class="fa-solid fa-thumbs-up yellow"></i> Green閾値</label>
+        <input type="number" id="editGreen" name="green" required>
       </div>
-      <div style="margin-bottom:10px;">
-        <label><i class="fa-solid fa-face-grin-tongue-wink purple"></i> Purple閾値:</label>
-        <input type="number" id="editPurple" name="purple" required style="width:100%; padding:5px;">
+      <div class="form-group">
+        <label><i class="fa-solid fa-face-grin-tongue-wink purple"></i> Purple閾値</label>
+        <input type="number" id="editPurple" name="purple" required>
       </div>
-      <div style="text-align:right;">
-        <button type="button" onclick="closeEditModal()" style="margin-right:10px;">キャンセル</button>
-        <button type="submit">更新</button>
+      <div class="flex gap-2" style="justify-content: flex-end;">
+        <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+          <i class="fas fa-times"></i> キャンセル
+        </button>
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-save"></i> 更新
+        </button>
       </div>
     </form>
   </div>
@@ -121,20 +206,28 @@
 
 <!-- アイテム移動ポップアップ -->
 <div id="moveItemModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
-  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:8px; width:90%; max-width:400px;">
-    <h3>アイテム移動</h3>
-    <div style="margin-bottom:15px;">
-      <strong>アイテム名:</strong> <span id="moveItemName"></span>
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--bg-primary); padding:1.5rem; border-radius:var(--radius-md); width:90%; max-width:400px; box-shadow:var(--shadow-lg);">
+    <h3 class="section-title mb-4">
+      <i class="fas fa-exchange-alt text-info"></i>
+      アイテム移動
+    </h3>
+    <div class="mb-4">
+      <label class="font-medium text-secondary">アイテム名:</label>
+      <div class="text-primary font-semibold" id="moveItemName"></div>
     </div>
-    <div style="margin-bottom:15px;">
-      <label>移動先を選択:</label>
-      <div id="locationList" style="margin-top:10px;">
+    <div class="form-group">
+      <label>移動先を選択</label>
+      <div id="locationList" style="margin-top:0.75rem;">
         <!-- 動的に生成される -->
       </div>
     </div>
-    <div style="text-align:right;">
-      <button type="button" onclick="closeMoveModal()" style="margin-right:10px;">キャンセル</button>
-      <button type="button" id="executeMoveBtn" onclick="executeMoveItem()" disabled>移動実行</button>
+    <div class="flex gap-2" style="justify-content: flex-end;">
+      <button type="button" onclick="closeMoveModal()" class="btn btn-secondary">
+        <i class="fas fa-times"></i> キャンセル
+      </button>
+      <button type="button" id="executeMoveBtn" onclick="executeMoveItem()" class="btn btn-primary" disabled>
+        <i class="fas fa-arrow-right"></i> 移動実行
+      </button>
     </div>
   </div>
 </div>
@@ -273,7 +366,36 @@ async function executeMoveItem() {
   }
 }
 document.body.addEventListener('click', e => {
-  // 既存の±ボタン判定はそのまま利用
+  // ±ボタン用
+  if (e.target.matches('.decrement-btn') && !e.target.disabled) {
+    const btn = e.target;
+    const locationId = btn.getAttribute('data-location-id');
+    const itemId = btn.getAttribute('data-item-id');
+    fetch(`/location/${locationId}/item/${itemId}/amount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'action=decrement'
+    }).then(res => {
+      if (res.ok) location.reload();
+      else alert('在庫数の更新に失敗しました');
+    });
+    return;
+  }
+
+  if (e.target.matches('.increment-btn')) {
+    const btn = e.target;
+    const locationId = btn.getAttribute('data-location-id');
+    const itemId = btn.getAttribute('data-item-id');
+    fetch(`/location/${locationId}/item/${itemId}/amount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'action=increment'
+    }).then(res => {
+      if (res.ok) location.reload();
+      else alert('在庫数の更新に失敗しました');
+    });
+    return;
+  }
 
   // inuseボタン判定・AJAX処理
   const inuseBtn = e.target.closest('.inuse-btn');
@@ -316,25 +438,34 @@ userInput.addEventListener('input', async () => {
     const users = await response.json();
 
     if (users.length === 0) {
-      suggestionsList.innerHTML = '<div style="padding: 5px;">ユーザが見つかりません。</div>';
+      suggestionsList.innerHTML = '<div style="padding: 0.75rem; color: var(--text-muted);">ユーザが見つかりません。</div>';
       return;
     }
 
     suggestionsList.innerHTML = '';
     users.forEach(user => {
       const item = document.createElement('div');
-      item.style.padding = '5px';
+      item.style.padding = '0.75rem';
       item.style.cursor = 'pointer';
-      item.style.borderBottom = '1px solid #ddd';
+      item.style.borderBottom = '1px solid var(--border-color)';
+      item.style.transition = 'background-color 0.2s';
+      item.addEventListener('mouseenter', () => {
+        item.style.backgroundColor = 'var(--bg-tertiary)';
+      });
+      item.addEventListener('mouseleave', () => {
+        item.style.backgroundColor = 'transparent';
+      });
 
       const nameDiv = document.createElement('div');
       nameDiv.textContent = user.user_name;
-      nameDiv.style.fontWeight = 'bold';
+      nameDiv.style.fontWeight = '600';
+      nameDiv.style.color = 'var(--text-primary)';
 
       const descDiv = document.createElement('div');
       descDiv.textContent = user.user_description ? user.user_description.slice(0, 30) + (user.user_description.length > 30 ? '...' : '') : '';
-      descDiv.style.fontSize = 'smaller';
-      descDiv.style.color = '#666';
+      descDiv.style.fontSize = '0.75rem';
+      descDiv.style.color = 'var(--text-muted)';
+      descDiv.style.marginTop = '0.25rem';
 
       item.appendChild(nameDiv);
       item.appendChild(descDiv);

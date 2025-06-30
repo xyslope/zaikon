@@ -11,6 +11,7 @@ const LocationRepository = require('./repositories/LocationRepository');
 const UserRepository = require('./repositories/UserRepository');
 const MemberRepository = require('./repositories/MemberRepository');
 const BanEmailRepository = require('./repositories/BanEmailRepository');
+const TemporaryPurchaseRepository = require('./repositories/TemporaryPurchaseRepository');
 
 // Controllers
 const UserController = require('./controllers/userController');
@@ -18,6 +19,8 @@ const { LocationController, calculateStatus } = require('./controllers/locationC
 const ItemController = require('./controllers/itemController');
 const LineController = require('./controllers/lineController');
 const LineSetupController = require('./controllers/lineSetupController');
+const EmailChangeController = require('./controllers/emailChangeController');
+const TemporaryPurchaseController = require('./controllers/temporaryPurchaseController');
 const { Client, middleware } = require('@line/bot-sdk');
 
 const app = express();
@@ -127,6 +130,7 @@ function authMiddleware(req, res, next) {
     /^\/send-admin-link$/,
     /^\/webhook$/,
     /^\/line-setup\/[\w-]+$/,
+    /^\/email-change\/[\w-]+$/,
     new RegExp(`^\\/admin\\/${adminKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)
   ];
   console.log(req.path);
@@ -156,6 +160,26 @@ if (process.env.NODE_ENV === 'test') {
 } else {
   app.use(authMiddleware);
 }
+
+// 活動トラッキングミドルウェア（認証後に実行）
+app.use((req, res, next) => {
+  // ユーザーがログインしていて、実際のユーザー（管理者やテストユーザーでない）の場合
+  if (req.session.user && 
+      req.session.user.user_id && 
+      req.session.user.role !== 'admin' && 
+      req.session.user.role !== 'test') {
+    
+    // 非同期で活動時刻を更新（レスポンスをブロックしない）
+    setImmediate(() => {
+      try {
+        UserRepository.updateLastActivity(req.session.user.user_id);
+      } catch (err) {
+        console.error('活動時刻更新エラー:', err);
+      }
+    });
+  }
+  next();
+});
 
 // ランディングページ（変更なし）
 app.get('/', (req, res) => {
@@ -420,7 +444,8 @@ app.post('/send-admin-link', async (req, res) => {
   }
 
   try {
-    const adminPageUrl = `http://localhost:${PORT}/admin/${adminKey}`;
+    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const adminPageUrl = `${baseUrl}/admin/${adminKey}`;
 
     const mailOptions = {
       from: 'zaikon_at_ecofirm.com <zaikon@ecofirm.com>',
@@ -573,6 +598,68 @@ app.post('/api/dashboard/:userId/line/shopping', LineController.sendShoppingList
 app.post('/api/line/generate-link/:userId', LineSetupController.generateLinkCode);
 app.get('/line-setup/:linkCode', LineSetupController.showLinkPage);
 app.post('/api/line/link-account', LineSetupController.linkUserAccount);
+app.post('/api/line/remove-link/:userId', LineSetupController.removeLinkConnection);
+
+// メール変更用エンドポイント
+app.post('/api/email/request-change/:userId', EmailChangeController.generateChangeRequest);
+app.get('/email-change/:changeCode', EmailChangeController.showChangeConfirmPage);
+app.post('/api/email/confirm-change', EmailChangeController.confirmEmailChange);
+
+// POST: メール変更確認リンク送信
+app.post('/send-email-change-link/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const { newEmail } = req.body;
+  const sessionUser = req.session.user;
+
+  if (!sessionUser || sessionUser.user_id !== userId) {
+    return res.status(403).json({ error: '権限がありません' });
+  }
+
+  if (!newEmail || !newEmail.includes('@')) {
+    return res.status(400).json({ error: '有効なメールアドレスを入力してください' });
+  }
+
+  try {
+    // EmailChangeControllerを使ってメール変更リクエストを生成
+    let result;
+    let statusCode = 200;
+    
+    const mockReq = { params: { userId }, body: { newEmail }, session: req.session };
+    const mockRes = {
+      status: (code) => {
+        statusCode = code;
+        return { json: (data) => { result = { statusCode: code, ...data }; } };
+      },
+      json: (data) => { result = data; }
+    };
+
+    EmailChangeController.generateChangeRequest(mockReq, mockRes);
+    
+    if (result && result.success) {
+      const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+      const changeUrl = `${baseUrl}/email-change/${result.changeCode}`;
+
+      const mailOptions = {
+        from: 'zaikon_at_ecofirm.com <zaikon_at_ecofirm.com>',
+        to: sessionUser.email, // 現在のメールアドレスに送信
+        subject: 'Zaikon メールアドレス変更の確認',
+        text: `メールアドレス変更の確認です。\n\n変更内容:\n現在のメール: ${sessionUser.email}\n新しいメール: ${newEmail}\n\n下記リンクから変更を確認してください（30分間有効）:\n${changeUrl}\n\n※このメールに心当たりがない場合は、無視してください。`
+      };
+
+      await transporter.sendMail(mailOptions);
+      
+      res.json({ 
+        success: true, 
+        message: `現在のメールアドレス（${sessionUser.email}）に確認メールを送信しました。` 
+      });
+    } else {
+      res.status(statusCode || 400).json(result || { error: 'メール変更リクエストの生成に失敗しました' });
+    }
+  } catch (err) {
+    console.error('メール変更リンク送信エラー:', err);
+    res.status(500).json({ error: 'メール送信中にエラーが発生しました' });
+  }
+});
 
 
 // POST: 指定場所削除
@@ -612,5 +699,80 @@ app.get('/api/item/:itemId/locations', ItemController.getAvailableLocations);
 
 // API: アイテム移動実行
 app.post('/api/item/:itemId/move', ItemController.postMoveItem);
+
+// 臨時購入依頼API
+app.post('/api/temp-purchase/:userId', TemporaryPurchaseController.createTempPurchase);
+app.get('/api/temp-purchase/:userId', TemporaryPurchaseController.getUserTempPurchases);
+app.get('/api/temp-purchase/:userId/active', TemporaryPurchaseController.getActiveTempPurchases);
+app.post('/api/temp-purchase/:tempId/complete', TemporaryPurchaseController.completeTempPurchase);
+app.post('/api/temp-purchase/:tempId/delete', TemporaryPurchaseController.deleteTempPurchase);
+app.post('/api/temp-purchase/:tempId/update', TemporaryPurchaseController.updateTempPurchase);
+
+// GET: 非アクティブユーザー一覧表示
+app.get(`/admin/${adminKey}/inactive-users`, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 365;
+    const inactiveUsers = UserRepository.findInactiveUsers(days);
+    const orphanedUsers = UserRepository.findOrphanedUsers();
+    
+    res.render('admin-inactive-users', { 
+      inactiveUsers, 
+      orphanedUsers, 
+      days,
+      ADMIN_KEY: adminKey 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('非アクティブユーザー取得中にエラーが発生しました');
+  }
+});
+
+// POST: 非アクティブユーザー削除（単体）
+app.post(`/admin/${adminKey}/delete-inactive-user`, async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) {
+    return res.status(400).send('ユーザIDが指定されていません');
+  }
+
+  try {
+    UserRepository.cascadeDelete(user_id);
+    console.log(`非アクティブユーザー削除: ${user_id}`);
+    res.redirect(`/admin/${adminKey}/inactive-users`);
+  } catch (err) {
+    console.error('非アクティブユーザー削除エラー:', err);
+    res.status(500).send('ユーザー削除中にエラーが発生しました');
+  }
+});
+
+// POST: 非アクティブユーザー一括削除
+app.post(`/admin/${adminKey}/cleanup-inactive-users`, async (req, res) => {
+  const { days, action } = req.body;
+  const daysSince = parseInt(days) || 365;
+
+  try {
+    let deletedCount = 0;
+    
+    if (action === 'inactive') {
+      const inactiveUsers = UserRepository.findInactiveUsers(daysSince);
+      for (const user of inactiveUsers) {
+        UserRepository.cascadeDelete(user.user_id);
+        deletedCount++;
+      }
+      console.log(`非アクティブユーザー一括削除: ${deletedCount}件 (${daysSince}日間非アクティブ)`);
+    } else if (action === 'orphaned') {
+      const orphanedUsers = UserRepository.findOrphanedUsers();
+      for (const user of orphanedUsers) {
+        UserRepository.cascadeDelete(user.user_id);
+        deletedCount++;
+      }
+      console.log(`孤立ユーザー一括削除: ${deletedCount}件`);
+    }
+
+    res.send(`${deletedCount}件のユーザーを削除しました。<a href="/admin/${adminKey}">管理画面に戻る</a>`);
+  } catch (err) {
+    console.error('一括削除エラー:', err);
+    res.status(500).send('一括削除中にエラーが発生しました');
+  }
+});
 
 module.exports = app;

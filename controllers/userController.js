@@ -80,7 +80,8 @@ class UserController {
       res.render('dashboard', {
         userId,
         locations,
-        sessionUser: req.session.user
+        sessionUser: req.session.user,
+        lineConfigured: !!(process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_CHANNEL_SECRET)
       });
     } catch (err) {
       res.status(500).send('データ取得中にエラーが発生しました');

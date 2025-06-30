@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>非アクティブユーザー管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .warning { background-color: #fff3cd; border: 1px solid #ffecb5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .danger { background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .btn { padding: 8px 16px; margin: 4px; cursor: pointer; border: none; border-radius: 4px; }
+    .btn-danger { background-color: #dc3545; color: white; }
+    .btn-warning { background-color: #ffc107; color: black; }
+    .btn-primary { background-color: #007bff; color: white; }
+    .form-group { margin: 10px 0; }
+    label { display: inline-block; width: 200px; }
+  </style>
+</head>
+<body>
+  <h1>非アクティブユーザー管理</h1>
+  
+  <p><a href="/admin/<%= ADMIN_KEY %>">← 管理者ページに戻る</a></p>
+
+  <div class="form-group">
+    <form method="GET">
+      <label for="days">非アクティブ期間:</label>
+      <select name="days" id="days" onchange="this.form.submit()">
+        <option value="30" <% if(days === 30) { %>selected<% } %>>30日</option>
+        <option value="90" <% if(days === 90) { %>selected<% } %>>90日</option>
+        <option value="180" <% if(days === 180) { %>selected<% } %>>180日</option>
+        <option value="365" <% if(days === 365) { %>selected<% } %>>365日</option>
+        <option value="730" <% if(days === 730) { %>selected<% } %>>730日</option>
+      </select>
+    </form>
+  </div>
+
+  <h2>非アクティブユーザー (<%= days %>日間アクティビティなし)</h2>
+  
+  <% if (inactiveUsers.length > 0) { %>
+    <div class="warning">
+      <strong>注意:</strong> <%= inactiveUsers.length %>件の非アクティブユーザーが見つかりました。
+      削除すると、ユーザーが所有する場所・アイテム・メンバーシップも全て削除されます。
+    </div>
+    
+    <form method="POST" action="/admin/<%= ADMIN_KEY %>/cleanup-inactive-users" style="margin: 20px 0;">
+      <input type="hidden" name="days" value="<%= days %>">
+      <input type="hidden" name="action" value="inactive">
+      <button type="submit" class="btn btn-danger" 
+              onclick="return confirm('本当に <%= inactiveUsers.length %>件の非アクティブユーザーを一括削除しますか？')">
+        非アクティブユーザー一括削除 (<%= inactiveUsers.length %>件)
+      </button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ユーザID</th>
+          <th>ユーザ名</th>
+          <th>メール</th>
+          <th>作成日</th>
+          <th>最終ログイン</th>
+          <th>最終活動</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% inactiveUsers.forEach(user => { %>
+          <tr>
+            <td><%= user.user_id %></td>
+            <td><%= user.user_name %></td>
+            <td><%= user.email %></td>
+            <td><%= user.created_at ? new Date(user.created_at).toLocaleDateString('ja-JP') : '-' %></td>
+            <td><%= user.last_login_at ? new Date(user.last_login_at).toLocaleDateString('ja-JP') : '未ログイン' %></td>
+            <td><%= user.last_activity_at ? new Date(user.last_activity_at).toLocaleDateString('ja-JP') : '活動なし' %></td>
+            <td>
+              <form method="POST" action="/admin/<%= ADMIN_KEY %>/delete-inactive-user" style="display:inline;">
+                <input type="hidden" name="user_id" value="<%= user.user_id %>">
+                <button type="submit" class="btn btn-danger" 
+                        onclick="return confirm('ユーザー「<%= user.user_name %>」を削除しますか？')">削除</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <div class="warning">
+      <%= days %>日間非アクティブなユーザーは見つかりませんでした。
+    </div>
+  <% } %>
+
+  <h2>孤立ユーザー (どの場所にも属していない)</h2>
+  
+  <% if (orphanedUsers.length > 0) { %>
+    <div class="danger">
+      <strong>警告:</strong> <%= orphanedUsers.length %>件の孤立ユーザーが見つかりました。
+      これらのユーザーはどの場所にも属しておらず、不要である可能性があります。
+    </div>
+    
+    <form method="POST" action="/admin/<%= ADMIN_KEY %>/cleanup-inactive-users" style="margin: 20px 0;">
+      <input type="hidden" name="action" value="orphaned">
+      <button type="submit" class="btn btn-warning" 
+              onclick="return confirm('本当に <%= orphanedUsers.length %>件の孤立ユーザーを一括削除しますか？')">
+        孤立ユーザー一括削除 (<%= orphanedUsers.length %>件)
+      </button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ユーザID</th>
+          <th>ユーザ名</th>
+          <th>メール</th>
+          <th>作成日</th>
+          <th>最終活動</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% orphanedUsers.forEach(user => { %>
+          <tr>
+            <td><%= user.user_id %></td>
+            <td><%= user.user_name %></td>
+            <td><%= user.email %></td>
+            <td><%= user.created_at ? new Date(user.created_at).toLocaleDateString('ja-JP') : '-' %></td>
+            <td><%= user.last_activity_at ? new Date(user.last_activity_at).toLocaleDateString('ja-JP') : '活動なし' %></td>
+            <td>
+              <form method="POST" action="/admin/<%= ADMIN_KEY %>/delete-inactive-user" style="display:inline;">
+                <input type="hidden" name="user_id" value="<%= user.user_id %>">
+                <button type="submit" class="btn btn-danger" 
+                        onclick="return confirm('ユーザー「<%= user.user_name %>」を削除しますか？')">削除</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <div class="warning">
+      孤立ユーザーは見つかりませんでした。
+    </div>
+  <% } %>
+
+</body>
+</html>

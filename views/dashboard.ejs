@@ -8,56 +8,148 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1><%= sessionUser.user_name %> さんのアイテムの状況</h1>
+  <div class="main-header">
+    <h1><%= sessionUser.user_name %> さんのダッシュボード</h1>
+  </div>
+  
+  <div class="container">
 
-  <h2>要補充リスト</h2>
-  <ul id="replenishList">
-    <li>読み込み中...</li>
-  </ul>
-  <p>在庫からすぐに補充したほうがいいですよ</p>
-  <button id="sendReplenishToLine" class="line-btn" data-user-id="<%= userId %>">
-    <i class="fab fa-line"></i> 要補充リストをLINEで送信
-  </button>
+    <!-- 要補充リスト -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-exclamation-triangle text-warning"></i>
+          要補充リスト
+        </h2>
+        <% if (lineConfigured) { %>
+        <button id="sendReplenishToLine" class="line-btn btn-sm" data-user-id="<%= userId %>">
+          <i class="fab fa-line"></i> LINEで送信
+        </button>
+        <% } %>
+      </div>
+      <p class="text-secondary mb-4">在庫からすぐに補充したほうがいいですよ</p>
+      <ul id="replenishList">
+        <li>読み込み中...</li>
+      </ul>
+    </div>
 
-  <h2>買い物リスト</h2>
-  <ul id="shoppingList">
-    <li>読み込み中...</li>
-  </ul>
-  <p>頼まれる前に買っておくとポイント高そう</p>
-  <button id="sendShoppingToLine" class="line-btn" data-user-id="<%= userId %>">
-    <i class="fab fa-line"></i> 買い物リストをLINEで送信
-  </button>
+    <!-- 買い物リスト -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-shopping-cart text-danger"></i>
+          買い物リスト
+        </h2>
+        <% if (lineConfigured) { %>
+        <button id="sendShoppingToLine" class="line-btn btn-sm" data-user-id="<%= userId %>">
+          <i class="fab fa-line"></i> LINEで送信
+        </button>
+        <% } %>
+      </div>
+      <p class="text-secondary mb-4">頼まれる前に買っておくとポイント高そう</p>
+      <ul id="shoppingList">
+        <li>読み込み中...</li>
+      </ul>
+    </div>
 
-  <h2>あなたの場所一覧</h2>
-  <div class="tile-container">
-    <% locations.forEach(loc => { %>
-      <div class="tile">
-        <h3><a href="/location/<%= loc.location_id %>"><%= loc.location_name %></a></h3>
-        <!-- アイテムリスト -->
-        <ul style="margin:0; padding-left:1em;">
-        <% (loc.items || []).forEach(item => { %>
-          <li style="margin-bottom:2px;">
-            <%- include('item_partial', {item: item, locationId: loc.location_id }) %>
-          </li>
-        <% }) %>
-        </ul>
-        <!-- ユーザー一覧 -->
-        <div style="margin-top:0.5em; font-size:0.95em; color:#888;">
-          <i class="fa-solid fa-users"></i> 
-          <% (loc.members || []).map(m => m.user_name).join(' , ') %>
+    <!-- 臨時購入依頼 -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-bolt text-warning"></i>
+          臨時購入依頼
+        </h2>
+        <span class="section-subtitle">今日これ買ってきて！</span>
+      </div>
+      
+      <div class="form-box">
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <input type="text" id="tempItemName" placeholder="アイテム名（例: 牛乳、パン）" required>
+          </div>
+          <div class="form-group" style="flex: 2;">
+            <input type="text" id="tempDescription" placeholder="詳細（任意）">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <select id="tempPriority">
+              <option value="1">通常</option>
+              <option value="2">急ぎ</option>
+              <option value="3">超急ぎ</option>
+            </select>
+          </div>
+          <button id="addTempPurchase" class="btn-success">
+            <i class="fas fa-plus"></i> 追加
+          </button>
         </div>
       </div>
-    <% }) %>
-  </div>
-  <div class="form-box">
-    <form action="/user/<%= sessionUser.user_id %>/add-location" method="POST">
-      <input type="text" name="location_name" placeholder="新しい場所名" required>
-      <button type="submit">場所を追加</button>
-    </form>
-  </div>
-  
-  
-  <p><a href="/user/<%= sessionUser.user_id %>/edit">ユーザー情報の編集</a>｜<a href="/logout">ログアウト</a></p>
+      
+      <div id="tempPurchaseList">
+        <div class="text-muted">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- 場所一覧 -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-map-marker-alt text-info"></i>
+          あなたの場所一覧
+        </h2>
+      </div>
+      
+      <div class="tile-container">
+        <% locations.forEach(loc => { %>
+          <div class="tile">
+            <h3><a href="/location/<%= loc.location_id %>"><%= loc.location_name %></a></h3>
+            
+            <!-- アイテムリスト -->
+            <% if (loc.items && loc.items.length > 0) { %>
+              <div class="mb-4">
+                <% (loc.items || []).forEach(item => { %>
+                  <div class="mb-2">
+                    <%- include('item_partial', {item: item, locationId: loc.location_id }) %>
+                  </div>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <p class="text-muted text-sm mb-4">アイテムがありません</p>
+            <% } %>
+            
+            <!-- ユーザー一覧 -->
+            <div class="flex items-center gap-2 text-sm text-secondary">
+              <i class="fa-solid fa-users"></i> 
+              <span><%= (loc.members || []).map(m => m.user_name).join(', ') %></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+      
+      <!-- 新しい場所追加 -->
+      <div class="form-box">
+        <form action="/user/<%= sessionUser.user_id %>/add-location" method="POST" class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <input type="text" name="location_name" placeholder="新しい場所名" required>
+          </div>
+          <button type="submit" class="btn-success">
+            <i class="fas fa-plus"></i> 場所を追加
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="section">
+      <div class="flex items-center justify-between">
+        <a href="/user/<%= sessionUser.user_id %>/edit" class="btn btn-outline">
+          <i class="fas fa-user-edit"></i> ユーザー情報の編集
+        </a>
+        <a href="/logout" class="btn btn-secondary">
+          <i class="fas fa-sign-out-alt"></i> ログアウト
+        </a>
+      </div>
+    </div>
+    
+  </div> <!-- /container -->
 <script>
 // location.ejsと同じダイアログ
 function openAmountEdit(locationId, itemId, current) {
@@ -166,9 +258,172 @@ document.addEventListener('DOMContentLoaded', () => {
   const userId = '<%= userId %>';
   fetchAndRenderList(`/api/dashboard/${userId}/replenish`, 'replenishList');
   fetchAndRenderList(`/api/dashboard/${userId}/shopping`, 'shoppingList');
+  fetchAndRenderTempPurchases();
 
-  // LINE送信ボタンの処理
-  document.getElementById('sendReplenishToLine').addEventListener('click', async function() {
+  // 臨時購入依頼関連の関数
+  async function fetchAndRenderTempPurchases() {
+    const container = document.getElementById('tempPurchaseList');
+    container.innerHTML = '<li>読み込み中...</li>';
+    try {
+      const response = await fetch(`/api/temp-purchase/${userId}/active`);
+      if (!response.ok) throw new Error('通信失敗');
+      const purchases = await response.json();
+      
+      if (purchases.length === 0) {
+        container.innerHTML = '<div class="text-muted">現在、臨時購入依頼はありません</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      purchases.forEach(purchase => {
+        const item = document.createElement('div');
+        item.className = 'temp-purchase-item';
+        if (purchase.priority === 3) item.className += ' priority-high';
+        else if (purchase.priority === 2) item.className += ' priority-medium';
+        
+        const priorityEmoji = purchase.priority === 3 ? '🔥' : purchase.priority === 2 ? '⚡' : '📝';
+        const timeAgo = getTimeAgo(purchase.created_at);
+        
+        item.innerHTML = `
+          <div class="temp-purchase-content">
+            <div class="temp-purchase-title">${priorityEmoji} ${purchase.item_name}</div>
+            ${purchase.description ? `<div class="text-sm text-secondary mb-1">${purchase.description}</div>` : ''}
+            <div class="temp-purchase-meta">依頼者: ${purchase.requested_by_name} | ${timeAgo}</div>
+          </div>
+          <div class="temp-purchase-actions">
+            <button onclick="completeTempPurchase('${purchase.temp_id}')" class="btn btn-success btn-sm">
+              <i class="fas fa-check"></i> 完了
+            </button>
+            <button onclick="deleteTempPurchase('${purchase.temp_id}')" class="btn btn-danger btn-sm">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    } catch (e) {
+      container.innerHTML = '<li>データの取得に失敗しました</li>';
+    }
+  }
+
+  function getTimeAgo(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffHours >= 24) {
+      return `${Math.floor(diffHours / 24)}日前`;
+    } else if (diffHours >= 1) {
+      return `${diffHours}時間前`;
+    } else if (diffMins >= 1) {
+      return `${diffMins}分前`;
+    } else {
+      return '数秒前';
+    }
+  }
+
+  // 臨時購入依頼追加
+  document.getElementById('addTempPurchase').addEventListener('click', async function() {
+    const itemName = document.getElementById('tempItemName').value.trim();
+    const description = document.getElementById('tempDescription').value.trim();
+    const priority = document.getElementById('tempPriority').value;
+    
+    if (!itemName) {
+      alert('アイテム名を入力してください');
+      return;
+    }
+    
+    const btn = this;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '追加中...';
+    
+    try {
+      const response = await fetch(`/api/temp-purchase/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          item_name: itemName, 
+          description: description || null, 
+          priority: parseInt(priority) 
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        // フォームリセット
+        document.getElementById('tempItemName').value = '';
+        document.getElementById('tempDescription').value = '';
+        document.getElementById('tempPriority').value = '1';
+        
+        // リスト再読み込み
+        fetchAndRenderTempPurchases();
+        alert('✅ ' + result.message);
+      } else {
+        alert('❌ ' + (result.error || 'エラーが発生しました'));
+      }
+    } catch (error) {
+      alert('❌ 通信エラーが発生しました');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  });
+
+  // 臨時購入依頼完了
+  window.completeTempPurchase = async function(tempId) {
+    if (!confirm('この臨時購入依頼を完了しますか？')) return;
+    
+    try {
+      const response = await fetch(`/api/temp-purchase/${tempId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        fetchAndRenderTempPurchases();
+        alert('✅ ' + result.message);
+      } else {
+        alert('❌ ' + (result.error || 'エラーが発生しました'));
+      }
+    } catch (error) {
+      alert('❌ 通信エラーが発生しました');
+    }
+  };
+
+  // 臨時購入依頼削除
+  window.deleteTempPurchase = async function(tempId) {
+    if (!confirm('この臨時購入依頼を削除しますか？')) return;
+    
+    try {
+      const response = await fetch(`/api/temp-purchase/${tempId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        fetchAndRenderTempPurchases();
+        alert('✅ ' + result.message);
+      } else {
+        alert('❌ ' + (result.error || 'エラーが発生しました'));
+      }
+    } catch (error) {
+      alert('❌ 通信エラーが発生しました');
+    }
+  };
+
+  // LINE送信ボタンの処理（LINE設定時のみ）
+  <% if (lineConfigured) { %>
+  const sendReplenishBtn = document.getElementById('sendReplenishToLine');
+  if (sendReplenishBtn) {
+    sendReplenishBtn.addEventListener('click', async function() {
     const btn = this;
     const originalText = btn.innerHTML;
     
@@ -194,9 +449,12 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
-  });
+    });
+  }
 
-  document.getElementById('sendShoppingToLine').addEventListener('click', async function() {
+  const sendShoppingBtn = document.getElementById('sendShoppingToLine');
+  if (sendShoppingBtn) {
+    sendShoppingBtn.addEventListener('click', async function() {
     const btn = this;
     const originalText = btn.innerHTML;
     
@@ -222,7 +480,9 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
-  });
+    });
+  }
+  <% } %>
 });
 </script>
 </body>

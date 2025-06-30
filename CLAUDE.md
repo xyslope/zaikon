@@ -63,3 +63,11 @@ MVC pattern with controllers in `/controllers/` directory:
 - Configured for Fly.io deployment
 - Dockerfile configuration available
 - Environment variables set via `fly secrets set`
+
+### ワークフロー
+- 変更完了後は必ず型チェックを実行
+- 全テストではなく単体テストを優先して実行
+
+### 開発メモ
+- 27, 24の順にお願い。
+- 必ずブランチを作成して実施すること

@@ -31,7 +31,7 @@ class LineSetupController {
       }
     }
 
-    const baseUrl = (process.env.BASE_URL || `http://localhost:3000`).replace(/\/+$/, '');
+    const baseUrl = (process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/+$/, '');
     const linkUrl = `${baseUrl}/line-setup/${linkCode}`;
 
     res.json({
@@ -140,6 +140,38 @@ class LineSetupController {
     } catch (error) {
       console.error('LINE連携エラー:', error);
       res.status(500).json({ error: 'LINE連携処理中にエラーが発生しました' });
+    }
+  }
+
+  // LINE連携解除
+  static removeLinkConnection(req, res) {
+    const { userId } = req.params;
+    const sessionUser = req.session.user;
+
+    if (!sessionUser || sessionUser.user_id !== userId) {
+      return res.status(403).json({ error: '権限がありません' });
+    }
+
+    try {
+      const user = UserRepository.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'ユーザーが見つかりません' });
+      }
+
+      if (!user.line_user_id) {
+        return res.status(400).json({ error: 'LINE連携されていません' });
+      }
+
+      UserRepository.removeLinkUserIdConnection(userId);
+
+      res.json({ 
+        success: true, 
+        message: 'LINE連携を解除しました'
+      });
+
+    } catch (error) {
+      console.error('LINE連携解除エラー:', error);
+      res.status(500).json({ error: 'LINE連携解除処理中にエラーが発生しました' });
     }
   }
 }

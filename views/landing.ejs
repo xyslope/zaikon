@@ -10,29 +10,110 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<h3> 気が利いてるって言われたらうれしい</h3>
-<img src="images/mainlogo.png">
-<h1>Silent Keeper</h1>
-<h1>やってるつもりなのに、使えない人って言われてしまう人、いるよね</h1>
-<ul>
-  <li>洗剤、空やん？使ったら補充しといてよ！</li>
-  <li>シャンプー詰め替えるの、いつもうちやねんけど？</li>
-  <li>足りなくなりそうなら、買ってきてほしい</li>
-  <li>手伝いたいけど、何が足りないか分からん</li>
-  <li>ティッシュの予備、残ってたっけ？</li>
-  <li>買ってきたら、同じもの家にあった！</li>
-</ul>
+  <div class="main-header">
+    <h1><i class="fas fa-boxes text-primary"></i> Silent Keeper</h1>
+  </div>
+  
+  <div class="container">
+    <!-- ヒーロー セクション -->
+    <div class="section">
+      <div class="text-center" style="text-align: center;">
+        <img src="images/mainlogo.png" style="max-width: 200px; margin-bottom: 1rem;">
+        <h2 class="text-primary mb-4">気が利いてるって言われたらうれしい</h2>
+        <p class="text-secondary" style="font-size: 1.125rem; margin-bottom: 2rem;">やってるつもりなのに、使えない人って言われてしまう人、いるよね</p>
+      </div>
+    </div>
 
-<h1>補充・買い物やって、「使える相方」になろう</h1>
-  <h2>利用は直接ユーザーページを開くだけ</h2>
-  ページ忘れた？メールで受け取れます。
-  <form id="sendLinkForm">
-    <label>メールアドレス: <input type="email" name="email" id="emailInput" required></label><br>
-    <button type="submit">送信</button>
-  </form>
-  <p id="sendLinkMessage"></p>
+    <!-- 問題点 -->
+    <div class="section">
+      <h2 class="section-title">
+        <i class="fas fa-exclamation-circle text-warning"></i>
+        よくある困りごと
+      </h2>
+      <div class="tile-container">
+        <div class="tile">
+          <div class="mb-2">
+            <i class="fas fa-soap text-danger"></i>
+            <span class="font-medium">洗剤、空やん？使ったら補充しといてよ！</span>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="mb-2">
+            <i class="fas fa-bottle-droplet text-danger"></i>
+            <span class="font-medium">シャンプー詰め替えるの、いつもうちやねんけど？</span>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="mb-2">
+            <i class="fas fa-shopping-cart text-warning"></i>
+            <span class="font-medium">足りなくなりそうなら、買ってきてほしい</span>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="mb-2">
+            <i class="fas fa-question-circle text-info"></i>
+            <span class="font-medium">手伝いたいけど、何が足りないか分からん</span>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="mb-2">
+            <i class="fas fa-tissue text-warning"></i>
+            <span class="font-medium">ティッシュの予備、残ってたっけ？</span>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="mb-2">
+            <i class="fas fa-redo text-danger"></i>
+            <span class="font-medium">買ってきたら、同じもの家にあった！</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <p>はじめての方は<a href="/register">ユーザー登録</a>からどうぞ</p>
+    <!-- 解決策 -->
+    <div class="section">
+      <h2 class="section-title text-success">
+        <i class="fas fa-lightbulb text-success"></i>
+        補充・買い物やって、「使える相方」になろう
+      </h2>
+      <p class="text-secondary mb-4">在庫状況を共有して、気づいた人が補充・買い物をする仕組みを作りましょう</p>
+    </div>
+
+    <!-- ログイン方法 -->
+    <div class="section">
+      <h2 class="section-title">
+        <i class="fas fa-sign-in-alt text-primary"></i>
+        利用方法
+      </h2>
+      <p class="text-secondary mb-4">利用は直接ユーザーページを開くだけ。ページ忘れた？メールで受け取れます。</p>
+      
+      <div class="form-box">
+        <form id="sendLinkForm">
+          <div class="form-group">
+            <label for="emailInput">
+              <i class="fas fa-envelope"></i>
+              メールアドレス
+            </label>
+            <input type="email" name="email" id="emailInput" placeholder="your-email@example.com" required>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i>
+            ユーザーページURLを送信
+          </button>
+        </form>
+        <div id="sendLinkMessage" class="text-sm" style="margin-top: 0.75rem;"></div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <p class="text-secondary">はじめての方は
+          <a href="/register" class="btn btn-outline btn-sm" style="margin-left: 0.5rem;">
+            <i class="fas fa-user-plus"></i>
+            ユーザー登録
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
 
   <script>
     document.getElementById('sendLinkForm').addEventListener('submit', async (e) => {
