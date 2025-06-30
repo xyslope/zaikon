@@ -32,12 +32,14 @@ async function runMigrations() {
     console.log(`Applying migration: ${file}`);
     try {
       const migration = require(path.join(migrationsDir, file));
-      if (typeof migration.run === 'function') {
+      if (typeof migration.up === 'function') {
+        await migration.up(db);
+      } else if (typeof migration.run === 'function') {
         await migration.run(db);
       } else if (typeof migration === 'function') {
         await migration(db);
       } else {
-        throw new Error('Migration file must export a run function or be a function');
+        throw new Error('Migration file must export an up function, run function, or be a function');
       }
 
       // 適用済み記録を追加

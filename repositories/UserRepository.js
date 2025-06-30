@@ -73,6 +73,12 @@ class UserRepository {
     return db.prepare('DELETE FROM users WHERE user_id = ?').run(userId);
   }
 
+  // メールアドレス更新
+  static updateEmail(userId, newEmail) {
+    const stmt = db.prepare('UPDATE users SET email = ? WHERE user_id = ?');
+    return stmt.run(newEmail, userId);
+  }
+
 }
 
 module.exports = UserRepository;
