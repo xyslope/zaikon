@@ -59,24 +59,44 @@ class LocationController {
     const sessionUser = req.session.user;
 
     try {
-      const location = LocationRepository.findById(locationId);
-      if (!location) {
-        return res.status(404).send('場所が見つかりません');
-      }
-
-      if (!sessionUser) {
+      // Validate session user first
+      if (!sessionUser || !sessionUser.user_id) {
+        console.warn(`不正アクセス試行: セッションユーザー無効 locationId=${locationId}`);
         return res.status(403).send('アクセス権がありません（未ログイン）');
       }
 
-      const isMember = MemberRepository.findWithUserDetails(locationId)
-        .some(member => member.user_id === sessionUser.user_id);
+      // Validate location exists
+      const location = LocationRepository.findById(locationId);
+      if (!location) {
+        console.warn(`不正アクセス試行: 存在しない場所 locationId=${locationId} userId=${sessionUser.user_id}`);
+        return res.status(404).send('場所が見つかりません');
+      }
+
+      // Get members with proper error handling
+      let members;
+      try {
+        members = MemberRepository.findWithUserDetails(locationId);
+        if (!Array.isArray(members)) {
+          throw new Error('メンバー情報の取得に失敗');
+        }
+      } catch (memberErr) {
+        console.error('メンバー情報取得エラー:', memberErr, 'locationId:', locationId);
+        return res.status(500).send('アクセス権限の確認中にエラーが発生しました');
+      }
+
+      // Strict membership validation with defensive checks
+      const isMember = members.some(member => 
+        member && 
+        member.user_id === sessionUser.user_id
+      );
 
       if (!isMember) {
+        console.warn(`不正アクセス試行: 非メンバーアクセス locationId=${locationId} userId=${sessionUser.user_id}`);
         return res.status(403).send('アクセス権がありません');
       }
 
+      // Get items only after authorization is confirmed
       const items = ItemRepository.findByLocationId(locationId);
-      const members = MemberRepository.findWithUserDetails(locationId);
 
       res.render('location', {
         locationId,
