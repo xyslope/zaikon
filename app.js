@@ -11,6 +11,7 @@ const LocationRepository = require('./repositories/LocationRepository');
 const UserRepository = require('./repositories/UserRepository');
 const MemberRepository = require('./repositories/MemberRepository');
 const BanEmailRepository = require('./repositories/BanEmailRepository');
+const TemporaryPurchaseRepository = require('./repositories/TemporaryPurchaseRepository');
 
 // Controllers
 const UserController = require('./controllers/userController');
@@ -18,6 +19,8 @@ const { LocationController, calculateStatus } = require('./controllers/locationC
 const ItemController = require('./controllers/itemController');
 const LineController = require('./controllers/lineController');
 const LineSetupController = require('./controllers/lineSetupController');
+const EmailChangeController = require('./controllers/emailChangeController');
+const TemporaryPurchaseController = require('./controllers/temporaryPurchaseController');
 const { Client, middleware } = require('@line/bot-sdk');
 
 const app = express();
@@ -127,6 +130,7 @@ function authMiddleware(req, res, next) {
     /^\/send-admin-link$/,
     /^\/webhook$/,
     /^\/line-setup\/[\w-]+$/,
+    /^\/email-change\/[\w-]+$/,
     new RegExp(`^\\/admin\\/${adminKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)
   ];
   console.log(req.path);
@@ -612,5 +616,21 @@ app.get('/api/item/:itemId/locations', ItemController.getAvailableLocations);
 
 // API: アイテム移動実行
 app.post('/api/item/:itemId/move', ItemController.postMoveItem);
+
+// LINE連携解除
+app.post('/api/line/remove-link/:userId', LineSetupController.removeLinkConnection);
+
+// メール変更用エンドポイント
+app.post('/api/email/request-change/:userId', EmailChangeController.generateChangeRequest);
+app.get('/email-change/:changeCode', EmailChangeController.showChangeConfirmPage);
+app.post('/api/email/confirm-change', EmailChangeController.confirmEmailChange);
+
+// 臨時購入依頼API
+app.post('/api/temp-purchase/:userId', TemporaryPurchaseController.createTempPurchase);
+app.get('/api/temp-purchase/:userId', TemporaryPurchaseController.getUserTempPurchases);
+app.get('/api/temp-purchase/:userId/active', TemporaryPurchaseController.getActiveTempPurchases);
+app.post('/api/temp-purchase/:tempId/complete', TemporaryPurchaseController.completeTempPurchase);
+app.post('/api/temp-purchase/:tempId/delete', TemporaryPurchaseController.deleteTempPurchase);
+app.post('/api/temp-purchase/:tempId/update', TemporaryPurchaseController.updateTempPurchase);
 
 module.exports = app;

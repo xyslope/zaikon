@@ -142,6 +142,45 @@ class LineSetupController {
       res.status(500).json({ error: 'LINE連携処理中にエラーが発生しました' });
     }
   }
+
+  // LINE連携解除
+  static removeLinkConnection(req, res) {
+    const { userId } = req.params;
+    const sessionUser = req.session.user;
+
+    if (!sessionUser || sessionUser.user_id !== userId) {
+      return res.status(403).json({ error: '権限がありません' });
+    }
+
+    try {
+      // ユーザーのLINE連携情報を取得
+      const user = UserRepository.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'ユーザーが見つかりません' });
+      }
+
+      if (!user.line_user_id) {
+        return res.status(400).json({ error: 'LINE連携されていません' });
+      }
+
+      // LINE連携を解除（line_user_idをNULLに設定）
+      UserRepository.updateUser({
+        user_id: userId,
+        user_name: user.user_name,
+        user_description: user.user_description,
+        line_user_id: null
+      });
+
+      res.json({ 
+        success: true, 
+        message: 'LINE連携を解除しました' 
+      });
+
+    } catch (error) {
+      console.error('LINE連携解除エラー:', error);
+      res.status(500).json({ error: 'LINE連携解除処理中にエラーが発生しました' });
+    }
+  }
 }
 
 module.exports = LineSetupController;
