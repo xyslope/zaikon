@@ -374,9 +374,13 @@ app.use((err, req, res, next) => {
 
 // メール送信設定
 const transporter = nodemailer.createTransport({
-  host: 'localhost',
-  port: 25,
-  secure: false
+  host: process.env.SMTP_HOST || 'localhost',
+  port: parseInt(process.env.SMTP_PORT) || 25,
+  secure: process.env.SMTP_SECURE === 'true' || false,
+  auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  } : undefined
 });
 
 // POST: メールアドレスからユーザページ送信
