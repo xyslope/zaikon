@@ -374,11 +374,9 @@ app.use((err, req, res, next) => {
 
 // メール送信設定
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
+  host: 'localhost',
+  port: 25,
+  secure: false
 });
 
 // POST: メールアドレスからユーザページ送信
