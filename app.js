@@ -47,7 +47,9 @@ console.log('adminKey:', adminKey);
 const FileStore = require('session-file-store')(session);
 const fs = require('fs');
 
-const sessionDir = path.join(__dirname, 'data', 'sessions');
+const sessionDir = process.env.NODE_ENV === 'production' 
+  ? '/data/sessions' 
+  : path.join(__dirname, 'data', 'sessions');
 if (!fs.existsSync(sessionDir)) {
   fs.mkdirSync(sessionDir, { recursive: true });
 }
