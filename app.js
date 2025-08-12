@@ -410,7 +410,15 @@ app.post('/send-user-link', async (req, res) => {
       text: `Zaikonでのあなたのユーザページです。\n保存してご使用ください。\n\n${userPageUrl}`
     };
 
+    console.log('SMTP設定:', {
+      host: process.env.SMTP_HOST || 'localhost',
+      port: parseInt(process.env.SMTP_PORT) || 25,
+      secure: process.env.SMTP_SECURE === 'true' || false
+    });
+    console.log('メール送信オプション:', mailOptions);
+
     await transporter.sendMail(mailOptions);
+    console.log('メール送信成功:', email);
 
     res.send('ユーザページのURLをメールで送信しました。');
   } catch (err) {

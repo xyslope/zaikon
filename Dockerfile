@@ -13,7 +13,7 @@ RUN npm ci --only=production
 COPY . .
 
 # データディレクトリを作成（永続化用）
-RUN mkdir -p /data
+RUN mkdir -p /data /data/sessions
 
 # ポート3000を公開
 EXPOSE 3000
