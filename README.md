@@ -3,6 +3,8 @@
 ## スクリプトの起動
 > npm run dev
 
+## Coolifyを使うことにしたので以下は無効
+
 ## デプロイ方法
 Fly.ioの公式サイト（https://fly.io） でアカウント登録。
 ローカルにFly CLIをインストール（WindowsならWingetやChocolatey、Mac/LinuxならHomebrewやスクリプトで）。
