@@ -83,6 +83,10 @@
           <input type="number" name="purple" placeholder="6" value="6" required>
           <span class="text-sm color-purple ml-sm">在庫過多</span>
         </div>
+        <div class="label-icon-input">
+          <input type="checkbox" name="is_consumable" id="is_consumable" value="1">
+          <label for="is_consumable">使い切り型（在庫数のみ管理）</label>
+        </div>
         <button type="submit" class="btn-success w-full">
           <i class="fas fa-plus"></i> アイテムを追加
         </button>
@@ -118,6 +122,10 @@
       <div style="margin-bottom:10px;">
         <label><i class="fa-solid fa-face-grin-tongue-wink purple"></i> Purple閾値:</label>
         <input type="number" id="editPurple" name="purple" required style="width:100%; padding:5px;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <input type="checkbox" id="editIsConsumable" name="is_consumable" value="1">
+        <label for="editIsConsumable">使い切り型（在庫数のみ管理）</label>
       </div>
       <div style="text-align:right;">
         <button type="button" onclick="closeEditModal()" style="margin-right:10px;">キャンセル</button>
@@ -180,6 +188,7 @@ async function openItemEdit(locationId, itemId) {
     document.getElementById('editYellow').value = item.yellow;
     document.getElementById('editGreen').value = item.green;
     document.getElementById('editPurple').value = item.purple;
+    document.getElementById('editIsConsumable').checked = item.is_consumable == 1;
     
     document.getElementById('editItemForm').action = `/location/${locationId}/item/${itemId}/edit`;
     document.getElementById('editItemModal').style.display = 'block';
