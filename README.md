@@ -7,6 +7,7 @@
 Webhookを使用して、自動更新できるようにします。
 
 Coolifyで発行したWebhookURLを使います。
+Manual Github Webhookの欄にあるものを使うみたい
 
 ## デプロイ方法
 Fly.ioの公式サイト（https://fly.io） でアカウント登録。
