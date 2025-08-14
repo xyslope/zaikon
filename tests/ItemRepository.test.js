@@ -49,7 +49,7 @@ describe('ItemRepository', () => {
     expect(prepareMock.run).toHaveBeenCalledWith(
       itemData.item_id, itemData.item_name, itemData.location_id,
       itemData.amount, itemData.status, itemData.yellow,
-      itemData.green, itemData.purple, itemData.inuse,
+      itemData.green, itemData.purple, itemData.inuse, 0,
       itemData.created_at, itemData.updated_at
     );
   });
@@ -139,6 +139,7 @@ describe('ItemRepository', () => {
       itemData.purple,
       itemData.amount,
       itemData.status,
+      0,
       'itm_1'
     );
   });
