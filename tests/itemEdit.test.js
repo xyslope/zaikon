@@ -83,8 +83,8 @@ describe('Item Edit API Endpoints', () => {
         .post(`/location/${locationId}/item/${itemId}/edit`)
         .send(incompleteData);
 
-      // エラーハンドリングを期待
-      expect([400, 500]).toContain(res.status);
+      // リダイレクトされることを期待
+      expect(res.status).toBe(302);
     });
 
     test('should handle invalid numeric values', async () => {

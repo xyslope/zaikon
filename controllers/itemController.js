@@ -4,10 +4,17 @@ const LocationRepository = require('../repositories/LocationRepository');
 const MemberRepository = require('../repositories/MemberRepository');
 
 function calculateStatus(amount, yellow, green, purple) {
+  // Ensure we handle the same way as the calling function
   amount = Number(amount);
   yellow = Number(yellow);
   green = Number(green);
   purple = Number(purple);
+  
+  // If any threshold value is NaN, return 'Red' as default
+  if (isNaN(yellow) || isNaN(green) || isNaN(purple) || isNaN(amount)) {
+    return 'Red';
+  }
+  
   if (amount >= purple) return 'Purple';
   if (amount >= green) return 'Green';
   if (amount >= yellow) return 'Yellow';

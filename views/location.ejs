@@ -60,24 +60,32 @@
     <div class="tile">
       <h3>アイテム追加</h3>
       <form action="/location/<%= locationId %>/add" method="POST">
-	<input type="text" name="item_name" placeholder="アイテム名" required>
-	<input type="number" name="amount" placeholder="在庫数" required>
-	<div class="label-icon-input">
-	  <i class="fa-solid fa-circle-exclamation red"></i>
-	  <input type="number" name="yellow" placeholder="Yellow閾値" value="1" required>
-	  <i class="red"> ＜ 補充</i>
-	</div>
-	<div class="label-icon-input">
-	  <i class="fa-solid fa-thumbs-up yellow"></i>
-	  <input type="number" name="green" placeholder="Green閾値" value="3" required>
-	  <i class="yellow">＜ 要注意</i>
-	</div>
-	<div class="label-icon-input">
-	  <i class="fa-solid fa-face-grin-tongue-wink purple"></i>
-	  <input type="number" name="purple" placeholder="Purple閾値" value="6" required>
-	  <i class="purple"> ＞ 在庫過多</i>
-	</div>
-  <button type="submit">追加</button>
+        <div class="label-icon-input">
+          <i class="fas fa-tag color-primary"></i>
+          <input type="text" name="item_name" placeholder="アイテム名" required>
+        </div>
+        <div class="label-icon-input">
+          <i class="fas fa-cubes color-primary"></i>
+          <input type="number" name="amount" placeholder="現在の在庫数" required>
+        </div>
+        <div class="label-icon-input">
+          <i class="fa-solid fa-circle-exclamation color-red"></i>
+          <input type="number" name="yellow" placeholder="1" value="1" required>
+          <span class="text-sm color-red ml-sm">補充が必要</span>
+        </div>
+        <div class="label-icon-input">
+          <i class="fa-solid fa-thumbs-up color-yellow"></i>
+          <input type="number" name="green" placeholder="3" value="3" required>
+          <span class="text-sm color-yellow ml-sm">注意が必要</span>
+        </div>
+        <div class="label-icon-input">
+          <i class="fa-solid fa-face-grin-tongue-wink color-purple"></i>
+          <input type="number" name="purple" placeholder="6" value="6" required>
+          <span class="text-sm color-purple ml-sm">在庫過多</span>
+        </div>
+        <button type="submit" class="btn-success w-full">
+          <i class="fas fa-plus"></i> アイテムを追加
+        </button>
 
       </form>
     </div>

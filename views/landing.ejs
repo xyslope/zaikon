@@ -1,38 +1,107 @@
-
-
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>在庫管理システム</title>
+  <title>Silent Keeper - 在庫管理システム</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="気が利いてるって言われたい人のための在庫管理システム Silent Keeper">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-<h3> 気が利いてるって言われたらうれしい</h3>
-<img src="images/mainlogo.png">
-<h1>Silent Keeper</h1>
-<h1>やってるつもりなのに、使えない人って言われてしまう人、いるよね</h1>
-<ul>
-  <li>洗剤、空やん？使ったら補充しといてよ！</li>
-  <li>シャンプー詰め替えるの、いつもうちやねんけど？</li>
-  <li>足りなくなりそうなら、買ってきてほしい</li>
-  <li>手伝いたいけど、何が足りないか分からん</li>
-  <li>ティッシュの予備、残ってたっけ？</li>
-  <li>買ってきたら、同じもの家にあった！</li>
-</ul>
+<body class="fade-in">
+  <div class="container">
+    <header class="text-center mb-2xl">
+      <div class="mb-lg">
+        <h3 class="text-lg color-primary mb-md">
+          <i class="fas fa-heart color-red"></i> 気が利いてるって言われたらうれしい
+        </h3>
+        <div class="mb-lg">
+          <img src="images/mainlogo.png" alt="Silent Keeper ロゴ" style="max-width: 200px; height: auto;">
+        </div>
+        <h1 class="mb-md">
+          <i class="fas fa-shield-alt color-primary"></i> Silent Keeper
+        </h1>
+      </div>
+      <div class="tile p-xl mb-xl" style="background: linear-gradient(135deg, var(--bg-primary), var(--bg-accent));">
+        <h2 class="color-red mb-lg">
+          <i class="fas fa-exclamation-triangle"></i> やってるつもりなのに、使えない人って言われてしまう人、いるよね
+        </h2>
+      </div>
+    </header>
+    <section class="mb-2xl">
+      <div class="tile">
+        <h3 class="mb-lg text-center">
+          <i class="fas fa-comments color-orange"></i> よく聞く声...
+        </h3>
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-md);">
+          <div class="problem-item">
+            <i class="fas fa-soap color-red"></i>
+            <span>洗剤、空やん？使ったら補充しといてよ！</span>
+          </div>
+          <div class="problem-item">
+            <i class="fas fa-pump-soap color-red"></i>
+            <span>シャンプー詰め替えるの、いつもうちやねんけど？</span>
+          </div>
+          <div class="problem-item">
+            <i class="fas fa-shopping-basket color-orange"></i>
+            <span>足りなくなりそうなら、買ってきてほしい</span>
+          </div>
+          <div class="problem-item">
+            <i class="fas fa-question-circle color-yellow"></i>
+            <span>手伝いたいけど、何が足りないか分からん</span>
+          </div>
+          <div class="problem-item">
+            <i class="fas fa-tissue color-purple"></i>
+            <span>ティッシュの予備、残ってたっけ？</span>
+          </div>
+          <div class="problem-item">
+            <i class="fas fa-duplicate color-red"></i>
+            <span>買ってきたら、同じもの家にあった！</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<h1>補充・買い物やって、「使える相方」になろう</h1>
-  <h2>利用は直接ユーザーページを開くだけ</h2>
-  ページ忘れた？メールで受け取れます。
-  <form id="sendLinkForm">
-    <label>メールアドレス: <input type="email" name="email" id="emailInput" required></label><br>
-    <button type="submit">送信</button>
-  </form>
-  <p id="sendLinkMessage"></p>
+    <section class="mb-2xl">
+      <div class="tile text-center" style="background: linear-gradient(135deg, var(--status-green), var(--status-green-hover)); color: white;">
+        <h1 class="mb-lg text-inverse">
+          <i class="fas fa-star"></i> 補充・買い物やって、「使える相方」になろう
+        </h1>
+      </div>
+    </section>
+    
+    <section class="mb-2xl">
+      <div class="tile">
+        <h2 class="text-center mb-lg">
+          <i class="fas fa-rocket color-primary"></i> 利用は直接ユーザーページを開くだけ
+        </h2>
+        <p class="text-center text-secondary mb-lg">ページ忘れた？メールで受け取れます。</p>
+        <div class="form-box mx-auto" style="max-width: 500px;">
+          <form id="sendLinkForm">
+            <div class="label-icon-input">
+              <i class="fas fa-envelope color-primary"></i>
+              <input type="email" name="email" id="emailInput" placeholder="メールアドレスを入力" required>
+            </div>
+            <button type="submit" class="btn-primary w-full">
+              <i class="fas fa-paper-plane"></i> ユーザーページのURLを送信
+            </button>
+          </form>
+          <div id="sendLinkMessage" class="mt-md text-center"></div>
+        </div>
+      </div>
+    </section>
 
-  <p>はじめての方は<a href="/register">ユーザー登録</a>からどうぞ</p>
+    <footer class="text-center mt-2xl pt-lg border-top">
+      <div class="tile">
+        <p class="text-lg">
+          <i class="fas fa-user-plus color-primary"></i> 
+          はじめての方は<a href="/register" class="btn btn-outline ml-sm">
+            <i class="fas fa-user-plus"></i> ユーザー登録
+          </a>からどうぞ
+        </p>
+      </div>
+    </footer>
+  </div>
 
   <script>
     document.getElementById('sendLinkForm').addEventListener('submit', async (e) => {
