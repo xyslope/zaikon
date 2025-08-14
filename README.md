@@ -4,6 +4,7 @@
 > npm run dev
 
 ## Coolifyを使うことにしたので以下は無効
+Webhookを使用して、自動更新できるようにします。
 
 ## デプロイ方法
 Fly.ioの公式サイト（https://fly.io） でアカウント登録。
