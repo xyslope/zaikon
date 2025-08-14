@@ -404,7 +404,7 @@ app.post('/send-user-link', async (req, res) => {
     const userPageUrl = `${baseUrl}/user/${user.user_id}`;
 
     const mailOptions = {
-      from: 'zaikon_at_ecofirm.com <zaikon_at_ecofirm.com>',
+      from: 'Zaikon <zaikon@ecofirm.com>',
       to: email,
       subject: 'Zaikon ユーザページのご案内',
       text: `Zaikonでのあなたのユーザページです。\n保存してご使用ください。\n\n${userPageUrl}`
@@ -440,7 +440,7 @@ app.post('/send-admin-link', async (req, res) => {
     const adminPageUrl = `${baseUrl}/admin/${adminKey}`;
 
     const mailOptions = {
-      from: 'zaikon_at_ecofirm.com <zaikon@ecofirm.com>',
+      from: 'Zaikon <zaikon@ecofirm.com>',
       to: adminEmail,
       subject: 'Zaikon 管理者ページのご案内',
       text: `管理者ページへのリンクです。\n保存してご使用ください。\n\n${adminPageUrl}`
