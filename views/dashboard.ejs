@@ -1,34 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ダッシュボード</title>
+  <title>ダッシュボード - Silent Keeper</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在庫管理システム Silent Keeper のダッシュボード">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-  <h1><%= sessionUser.user_name %> さんのアイテムの状況</h1>
+<body class="fade-in">
+  <div class="container">
+    <header class="mb-2xl">
+      <h1 class="text-center"><i class="fas fa-tachometer-alt color-primary"></i> <%= sessionUser.user_name %> さんのダッシュボード</h1>
+      <p class="text-center text-secondary">在庫状況とタスクの管理</p>
+    </header>
 
-  <h2>要補充リスト</h2>
-  <ul id="replenishList">
-    <li>読み込み中...</li>
-  </ul>
-  <p>在庫からすぐに補充したほうがいいですよ</p>
-  <button id="sendReplenishToLine" class="line-btn" data-user-id="<%= userId %>">
-    <i class="fab fa-line"></i> 要補充リストをLINEで送信
-  </button>
+    <div class="tile-container">
+      <div class="tile">
+        <h2><i class="fas fa-exclamation-triangle color-red"></i> 要補充リスト</h2>
+        <ul id="replenishList" class="list-unstyled">
+          <li class="text-muted"><i class="fas fa-spinner fa-spin"></i> 読み込み中...</li>
+        </ul>
+        <p class="text-sm text-secondary mb-md">在庫からすぐに補充したほうがいいですよ</p>
+        <button id="sendReplenishToLine" class="line-btn w-full" data-user-id="<%= userId %>">
+          <i class="fab fa-line"></i> 要補充リストをLINEで送信
+        </button>
+      </div>
+      
+      <div class="tile">
+        <h2><i class="fas fa-shopping-cart color-green"></i> 買い物リスト</h2>
+        <ul id="shoppingList" class="list-unstyled">
+          <li class="text-muted"><i class="fas fa-spinner fa-spin"></i> 読み込み中...</li>
+        </ul>
+        <p class="text-sm text-secondary mb-md">頼まれる前に買っておくとポイント高そう</p>
+        <button id="sendShoppingToLine" class="line-btn w-full" data-user-id="<%= userId %>">
+          <i class="fab fa-line"></i> 買い物リストをLINEで送信
+        </button>
+      </div>
+    </div>
 
-  <h2>買い物リスト</h2>
-  <ul id="shoppingList">
-    <li>読み込み中...</li>
-  </ul>
-  <p>頼まれる前に買っておくとポイント高そう</p>
-  <button id="sendShoppingToLine" class="line-btn" data-user-id="<%= userId %>">
-    <i class="fab fa-line"></i> 買い物リストをLINEで送信
-  </button>
-
-  <h2>あなたの場所一覧</h2>
+    <section class="mt-2xl">
+      <h2><i class="fas fa-map-marker-alt color-primary"></i> あなたの場所一覧</h2>
   <div class="tile-container">
     <% locations.forEach(loc => { %>
       <div class="tile">
@@ -41,23 +53,52 @@
           </li>
         <% }) %>
         </ul>
-        <!-- ユーザー一覧 -->
-        <div style="margin-top:0.5em; font-size:0.95em; color:#888;">
-          <i class="fa-solid fa-users"></i> 
-          <% (loc.members || []).map(m => m.user_name).join(' , ') %>
+        <!-- メンバー一覧 -->
+        <div class="member-list mt-sm">
+          <div class="flex items-center mb-xs">
+            <i class="fa-solid fa-users color-primary mr-xs"></i> 
+            <span class="font-semibold text-sm">メンバー:</span>
+          </div>
+          <% if (loc.members && loc.members.length > 0) { %>
+            <div class="flex flex-wrap gap-xs">
+              <% loc.members.forEach((member, index) => { %>
+                <span class="member-badge">
+                  <%= member.user_name %>
+                </span>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <span class="text-muted text-sm font-italic">メンバーなし</span>
+          <% } %>
         </div>
       </div>
     <% }) %>
   </div>
-  <div class="form-box">
-    <form action="/user/<%= sessionUser.user_id %>/add-location" method="POST">
-      <input type="text" name="location_name" placeholder="新しい場所名" required>
-      <button type="submit">場所を追加</button>
-    </form>
+    <div class="form-box mt-xl">
+      <h3><i class="fas fa-plus-circle color-primary"></i> 新しい場所を追加</h3>
+      <form action="/user/<%= sessionUser.user_id %>/add-location" method="POST">
+        <div class="label-icon-input">
+          <i class="fas fa-map-marker-alt color-primary"></i>
+          <input type="text" name="location_name" placeholder="場所名を入力してください" required>
+        </div>
+        <button type="submit" class="btn-primary w-full">
+          <i class="fas fa-plus"></i> 場所を追加
+        </button>
+      </form>
+    </div>
+    </section>
+    
+    <footer class="mt-2xl pt-lg border-top text-center">
+      <div class="flex justify-center gap-lg">
+        <a href="/user/<%= sessionUser.user_id %>/edit" class="btn btn-outline">
+          <i class="fas fa-user-edit"></i> ユーザー情報の編集
+        </a>
+        <a href="/logout" class="btn btn-outline btn-danger">
+          <i class="fas fa-sign-out-alt"></i> ログアウト
+        </a>
+      </div>
+    </footer>
   </div>
-  
-  
-  <p><a href="/user/<%= sessionUser.user_id %>/edit">ユーザー情報の編集</a>｜<a href="/logout">ログアウト</a></p>
 <script>
 // location.ejsと同じダイアログ
 function openAmountEdit(locationId, itemId, current) {

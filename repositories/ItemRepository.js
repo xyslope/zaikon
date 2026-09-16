@@ -14,16 +14,16 @@ class ItemRepository {
   static addItem(itemData) {
     const {
       item_id, item_name, location_id, amount, status,
-      yellow, green, purple, inuse, created_at, updated_at
+      yellow, green, purple, inuse, is_consumable, created_at, updated_at
     } = itemData;
     return db.prepare(`
       INSERT INTO items
       (item_id, item_name, location_id, amount, status,
-       yellow, green, purple, inuse, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       yellow, green, purple, inuse, is_consumable, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       item_id, item_name, location_id, amount, status,
-      yellow, green, purple, inuse,
+      yellow, green, purple, inuse, is_consumable || 0,
       created_at, updated_at
     );
   }
@@ -94,14 +94,14 @@ class ItemRepository {
   // アイテム完全更新
   static updateItem(itemId, itemData) {
     const {
-      item_name, yellow, green, purple, amount, status
+      item_name, yellow, green, purple, amount, status, is_consumable
     } = itemData;
     return db.prepare(`
       UPDATE items 
       SET item_name = ?, yellow = ?, green = ?, purple = ?, 
-          amount = ?, status = ?, updated_at = datetime('now')
+          amount = ?, status = ?, is_consumable = ?, updated_at = datetime('now')
       WHERE item_id = ?
-    `).run(item_name, yellow, green, purple, amount, status, itemId);
+    `).run(item_name, yellow, green, purple, amount, status, is_consumable || 0, itemId);
   }
 
   // ユーザIDでアイテム抽出（任意のinuse・status条件を渡せる）

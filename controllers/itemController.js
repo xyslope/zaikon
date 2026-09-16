@@ -4,10 +4,17 @@ const LocationRepository = require('../repositories/LocationRepository');
 const MemberRepository = require('../repositories/MemberRepository');
 
 function calculateStatus(amount, yellow, green, purple) {
+  // Ensure we handle the same way as the calling function
   amount = Number(amount);
   yellow = Number(yellow);
   green = Number(green);
   purple = Number(purple);
+  
+  // If any threshold value is NaN, return 'Red' as default
+  if (isNaN(yellow) || isNaN(green) || isNaN(purple) || isNaN(amount)) {
+    return 'Red';
+  }
+  
   if (amount >= purple) return 'Purple';
   if (amount >= green) return 'Green';
   if (amount >= yellow) return 'Yellow';
@@ -17,7 +24,7 @@ function calculateStatus(amount, yellow, green, purple) {
 class ItemController {
   static postAddItem(req, res) {
     const { locationId } = req.params;
-    const { item_name, yellow, green, purple, amount } = req.body;
+    const { item_name, yellow, green, purple, amount, is_consumable } = req.body;
 
     try {
       const now = new Date().toISOString();
@@ -25,6 +32,8 @@ class ItemController {
       const greenVal = parseInt(green || '3', 10);
       const purpleVal = parseInt(purple || '6', 10);
       const amountVal = parseInt(amount || '0', 10);
+      const isConsumableVal = is_consumable ? 1 : 0;
+      
       const newItem = {
         item_id: 'itm_' + uuidv4().slice(0, 8),
         item_name,
@@ -35,6 +44,7 @@ class ItemController {
         amount: amountVal,
         status: calculateStatus(amountVal, yellowVal, greenVal, purpleVal),
         inuse: 0,
+        is_consumable: isConsumableVal,
         created_at: now,
         updated_at: now
       };
@@ -71,6 +81,12 @@ class ItemController {
     try {
       const item = ItemRepository.findByLocationId(locationId).find(i => i.item_id === itemId);
       if (!item) return res.redirect(`/location/${locationId}`);
+      
+      // 使い切り型の場合はinuse更新を無効化
+      if (item.is_consumable == 1) {
+        return res.redirect(`/location/${locationId}`);
+      }
+      
       let newInuse = (parseInt(current_inuse, 10) + 1) % 3;
       let newAmount = item.amount;
       if (parseInt(current_inuse, 10) === 2 && newInuse === 0) {
@@ -160,13 +176,14 @@ class ItemController {
 
   static postEditItem(req, res) {
     const { locationId, itemId } = req.params;
-    const { item_name, yellow, green, purple, amount } = req.body;
+    const { item_name, yellow, green, purple, amount, is_consumable } = req.body;
 
     try {
       const yellowVal = parseInt(yellow, 10);
       const greenVal = parseInt(green, 10);
       const purpleVal = parseInt(purple, 10);
       const amountVal = parseInt(amount, 10);
+      const isConsumableVal = is_consumable ? 1 : 0;
       
       const status = calculateStatus(amountVal, yellowVal, greenVal, purpleVal);
       
@@ -176,7 +193,8 @@ class ItemController {
         green: greenVal,
         purple: purpleVal,
         amount: amountVal,
-        status
+        status,
+        is_consumable: isConsumableVal
       };
 
       ItemRepository.updateItem(itemId, itemData);

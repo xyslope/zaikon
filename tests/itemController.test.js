@@ -89,7 +89,8 @@ describe('ItemController', () => {
         green: 5,
         purple: 10,
         amount: 8,
-        status: 'Green' // calculateStatus(8, 2, 5, 10) should return 'Green'
+        status: 'Green', // calculateStatus(8, 2, 5, 10) should return 'Green'
+        is_consumable: 0
       });
       expect(res.redirect).toHaveBeenCalledWith('/location/loc_1');
     });
@@ -113,7 +114,8 @@ describe('ItemController', () => {
         green: 5,
         purple: 10,
         amount: 8,
-        status: 'Red' // calculateStatus with NaN should return 'Red'
+        status: 'Red', // calculateStatus with NaN should return 'Red'
+        is_consumable: 0
       });
     });
 
